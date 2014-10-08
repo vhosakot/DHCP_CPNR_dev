@@ -36,6 +36,7 @@ print c.get_client_entries.__doc__
 print c.get_client_entry.__doc__
 print c.create_policy.__doc__
 print c.create_scope.__doc__
+print c.update_dhcp_server.__doc__
 
 # Print all attributes
 print "c.CPNR_server_ip       = {0}".format(c.CPNR_server_ip)
@@ -48,6 +49,11 @@ print "c.url                  = {0}".format(c.url)
 # Get DHCPServer
 DHCPServer = c.get_DHCPServer()
 pprint.pprint(DHCPServer)
+
+# Update DHCPServer
+data = {"name":"DHCP", "clientClass":"True", "clientClassLookupId":"openstack-client-class", "DeleteOrphanedLeases":"True"}
+print c.update_dhcp_server(data)
+pprint.pprint(c.get_DHCPServer())
 
 # Get all policies
 Polices = c.get_policies()

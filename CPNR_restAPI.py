@@ -112,3 +112,12 @@ class CPNR_restApi:
         print r.text
         return r.status_code
 
+    def update_dhcp_server(self, data):
+        """Returns status code after updating dhcp server with data dictionary"""
+        request_url = self.url + "web-services/rest/resource/DHCPServer"
+        json_dump = json.dumps(data)
+        r = requests.request('PUT', request_url, data=json_dump, auth=self.auth, headers=self.headers)
+        # print r.status_code
+        print r.text
+        return r.status_code
+
