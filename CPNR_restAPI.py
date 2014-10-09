@@ -57,9 +57,12 @@ class CPNR_restApi:
         # print r.json()
         return r.json()
 
-    def get_client_class(self):
-        # Add later
-        pass
+    def get_client_class(self, client_class_name):
+        """Returns a dictionary with all the objects of a specific client class name from CPNR server"""
+        request_url = self.url + "web-services/rest/resource/ClientClass/" + client_class_name
+        r = requests.request('GET', request_url, auth=self.auth, headers=self.headers)
+        # print r.json()
+        return r.json()
 
     def get_vpns(self):
         """Returns a list of all the VPNs from CPNR server"""
@@ -68,9 +71,12 @@ class CPNR_restApi:
         # print r.json()
         return r.json()
 
-    def get_vpn(self):
-        # Add later
-        pass
+    def get_vpn(self, vpn_name):
+        """Returns a dictionary with all the objects of a specific VPN name from CPNR server"""
+        request_url = self.url + "web-services/rest/resource/VPN/" + vpn_name
+        r = requests.request('GET', request_url, auth=self.auth, headers=self.headers)
+        # print r.json()
+        return r.json()
 
     def get_scopes(self):
         """Returns a list of all the scopes from CPNR server"""
@@ -79,9 +85,12 @@ class CPNR_restApi:
         # print r.json()
         return r.json()
 
-    def get_scope(self):
-        # Add later
-        pass
+    def get_scope(self, scope_name):
+        """Returns a dictionary with all the objects of a specific scope name from CPNR server"""
+        request_url = self.url + "web-services/rest/resource/Scope/" + scope_name
+        r = requests.request('GET', request_url, auth=self.auth, headers=self.headers)
+        # print r.json()
+        return r.json()
 
     def get_client_entries(self):
         """Returns a list of all the client entries from CPNR server"""
@@ -112,9 +121,45 @@ class CPNR_restApi:
         print r.text
         return r.status_code
 
+    def create_client_class(self, data):
+        """Returns status code after creating a client class with data dictionary"""
+        request_url = self.url + "web-services/rest/resource/ClientClass"
+        json_dump = json.dumps(data)
+        r = requests.request('POST', request_url, data=json_dump, auth=self.auth, headers=self.headers)
+        # print r.status_code
+        print r.text
+        return r.status_code
+
+    def create_vpn(self, data):
+        """Returns status code after creating a VPN with data dictionary"""
+        request_url = self.url + "web-services/rest/resource/VPN"
+        json_dump = json.dumps(data)
+        r = requests.request('POST', request_url, data=json_dump, auth=self.auth, headers=self.headers)
+        # print r.status_code
+        print r.text
+        return r.status_code
+
+    def create_client_entry(self, data):
+        """Returns status code after creating a client entry with data dictionary"""
+        request_url = self.url + "web-services/rest/resource/ClientEntry"
+        json_dump = json.dumps(data)
+        r = requests.request('POST', request_url, data=json_dump, auth=self.auth, headers=self.headers)
+        # print r.status_code
+        print r.text
+        return r.status_code
+
     def update_dhcp_server(self, data):
         """Returns status code after updating dhcp server with data dictionary"""
         request_url = self.url + "web-services/rest/resource/DHCPServer"
+        json_dump = json.dumps(data)
+        r = requests.request('PUT', request_url, data=json_dump, auth=self.auth, headers=self.headers)
+        # print r.status_code
+        print r.text
+        return r.status_code
+
+    def update_policy(self, policy_name, data):
+        """Returns status code after updating policy policy_name with data dictionary"""
+        request_url = self.url + "web-services/rest/resource/Policy/" + policy_name
         json_dump = json.dumps(data)
         r = requests.request('PUT', request_url, data=json_dump, auth=self.auth, headers=self.headers)
         # print r.status_code
