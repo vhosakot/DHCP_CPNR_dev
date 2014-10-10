@@ -29,7 +29,7 @@ class CPNR_restApi:
         return ("<CPNR_restApi(CPNR_server_ip=%s, CPNR_server_port=%s, CPNR_server_username=%s)>" %
             (self.CPNR_server_ip, self.CPNR_server_port, self.CPNR_server_username))
 
-    def get_DHCPServer(self):
+    def get_dhcp_server(self):
         """Returns a dictionary with all the objects of DHCPServer"""
         request_url = self.url + "web-services/rest/resource/DHCPServer"
         r = requests.request('GET', request_url, auth=self.auth, headers=self.headers)
@@ -162,6 +162,57 @@ class CPNR_restApi:
         request_url = self.url + "web-services/rest/resource/Policy/" + policy_name
         json_dump = json.dumps(data)
         r = requests.request('PUT', request_url, data=json_dump, auth=self.auth, headers=self.headers)
+        # print r.status_code
+        print r.text
+        return r.status_code
+
+    def update_client_class(self, client_class_name, data):
+        """Returns status code after updating client class client_class_name with data dictionary"""
+        request_url = self.url + "web-services/rest/resource/ClientClass/" + client_class_name
+        json_dump = json.dumps(data)
+        r = requests.request('PUT', request_url, data=json_dump, auth=self.auth, headers=self.headers)
+        # print r.status_code
+        print r.text
+        return r.status_code
+
+    def update_vpn(self, vpn_name, data):
+        """Returns status code after updating VPN vpn_name with data dictionary"""
+        request_url = self.url + "web-services/rest/resource/VPN/" + vpn_name
+        json_dump = json.dumps(data)
+        r = requests.request('PUT', request_url, data=json_dump, auth=self.auth, headers=self.headers)
+        # print r.status_code
+        print r.text
+        return r.status_code
+
+    def update_scope(self, scope_name, data):
+        """Returns status code after updating scope scope_name with data dictionary"""
+        request_url = self.url + "web-services/rest/resource/Scope/" + scope_name
+        json_dump = json.dumps(data)
+        r = requests.request('PUT', request_url, data=json_dump, auth=self.auth, headers=self.headers)
+        # print r.status_code
+        print r.text
+        return r.status_code
+
+    def delete_policy(self, policy_name):
+        """Returns status code after deleting policy policy_name"""
+        request_url = self.url + "web-services/rest/resource/Policy/" + policy_name
+        r = requests.request('DELETE', request_url, auth=self.auth, headers=self.headers)
+        # print r.status_code
+        print r.text
+        return r.status_code
+
+    def delete_client_class(self, client_class_name):
+        """Returns status code after deleting client class client_class_name"""
+        request_url = self.url + "web-services/rest/resource/ClientClass/" + client_class_name
+        r = requests.request('DELETE', request_url, auth=self.auth, headers=self.headers)
+        # print r.status_code
+        print r.text
+        return r.status_code
+
+    def delete_vpn(self, vpn_name):
+        """Returns status code after deleting VPN vpn_name"""
+        request_url = self.url + "web-services/rest/resource/VPN/" + vpn_name
+        r = requests.request('DELETE', request_url, auth=self.auth, headers=self.headers)
         # print r.status_code
         print r.text
         return r.status_code

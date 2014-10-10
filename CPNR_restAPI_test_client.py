@@ -28,7 +28,7 @@ test_name = "Check docstrings of all methods"
 print "\n======== {0} ========\n".format(test_name)
 print c.__doc__
 print c.__init__.__doc__
-print c.get_DHCPServer.__doc__
+print c.get_dhcp_server.__doc__
 print c.get_policies.__doc__
 print c.get_policy.__doc__
 print c.get_client_classes.__doc__
@@ -46,6 +46,12 @@ print c.create_client_class.__doc__
 print c.create_vpn.__doc__
 print c.create_client_entry.__doc__
 print c.update_policy.__doc__
+print c.update_client_class.__doc__
+print c.update_vpn.__doc__
+print c.update_scope.__doc__
+print c.delete_policy.__doc__
+print c.delete_client_class.__doc__
+print c.delete_vpn.__doc__
 
 # Print all attributes
 test_name = "Print all attributes"
@@ -60,21 +66,21 @@ print "c.url                  = {0}".format(c.url)
 # Get DHCPServer
 test_name = "Get DHCPServer"
 print "\n======== {0} ========\n".format(test_name)
-DHCPServer = c.get_DHCPServer()
+DHCPServer = c.get_dhcp_server()
 pprint.pprint(DHCPServer)
 
 # Update DHCPServer
 test_name = "Update DHCPServer"
 print "\n======== {0} ========\n".format(test_name)
-data = {"name":"DHCP", "clientClass":"True", "clientClassLookupId":"openstack-client-class", "DeleteOrphanedLeases":"True"}
+data = {"name":"DHCP", "clientClass":"True", "clientClassLookupId":"openstack-client-class", "deleteOrphanedLeases":"True"}
 print c.update_dhcp_server(data)
-pprint.pprint(c.get_DHCPServer())
-data = {"name":"DHCP", "clientClass":"False", "clientClassLookupId":"default", "DeleteOrphanedLeases":"False"}
+pprint.pprint(c.get_dhcp_server())
+data = {"name":"DHCP", "clientClass":"False", "clientClassLookupId":"default", "deleteOrphanedLeases":"False"}
 print c.update_dhcp_server(data)
-pprint.pprint(c.get_DHCPServer())
-data = {"name":"DHCP", "clientClass":"True", "clientClassLookupId":"openstack-client-class", "DeleteOrphanedLeases":"True"}
+pprint.pprint(c.get_dhcp_server())
+data = {"name":"DHCP", "clientClass":"True", "clientClassLookupId":"openstack-client-class", "deleteOrphanedLeases":"True"}
 print c.update_dhcp_server(data)
-pprint.pprint(c.get_DHCPServer())
+pprint.pprint(c.get_dhcp_server())
 
 # Get all policies
 test_name = "Get all policies"
@@ -199,11 +205,14 @@ pprint.pprint(VPN)
 test_name = "Create client entry with name, clientClassName, embeddedPolicy, hostName, reservedAddresses"
 print "\n======== {0} ========\n".format(test_name)
 Policy = c.get_policy("policy1")
-data = {'clientClassName': 'openstack-client-class', 'embeddedPolicy': Policy, 'hostName': 'host-name-1', 'name': '010203:04050607-1:2:3:4:5:6', 'reservedAddresses': '2.2.2.2'}
+# data = {'clientClassName': 'openstack-client-class', 'embeddedPolicy': Policy, 'hostName': 'host-name-1', 'name': '010203:04050607-1:2:3:4:5:6', 'reservedAddresses': '2.2.2.2'}
+
+data = {'clientClassName': 'openstack-client-class', 'embeddedPolicy': {"optionList":{"OptionItem":[{"number":"51","value":"00:09:3a:80"}]}}, 'hostName': 'host-name-1', 'name': '010203:04050607-1:2:3:4:5:6', 'reservedAddresses': '2.2.2.2'}
+
 print c.create_client_entry(data)
 Policy = c.get_policy("policy2")
 data = {'clientClassName': 'openstack-client-class', 'embeddedPolicy': Policy, 'hostName': 'host-name-2', 'name': '010203:04050608-1:2:3:4:5:7', 'reservedAddresses': '3.3.3.3'}
-print c.create_client_entry(data)
+# print c.create_client_entry(data)
 # Get all ClientEntries
 pprint.pprint(c.get_client_entries())
 
@@ -215,6 +224,66 @@ pprint.pprint(c.get_policy("policy1"))
 print c.update_policy("policy1", data)
 # Verify if policy1 is updated correctly
 pprint.pprint(c.get_policy("policy1"))
+
+# Update client class
+test_name = "Update client class"
+print "\n======== {0} ========\n".format(test_name)
+data = {"name":"openstack-client-class", "clientLookupId":"\"(request option 82 \"cisco-vpn-id1\")-(request chaddr)\""}
+pprint.pprint(c.get_client_class("openstack-client-class"))
+print c.update_client_class("openstack-client-class", data)
+pprint.pprint(c.get_client_class("openstack-client-class"))
+data = {"name":"openstack-client-class", "clientLookupId":"\"(request option 82 \"cisco-vpn-id\")-(request chaddr)\""}
+print c.update_client_class("openstack-client-class", data)
+pprint.pprint(c.get_client_class("openstack-client-class"))
+
+# Update VPN
+test_name = "Update VPN"
+print "\n======== {0} ========\n".format(test_name)
+data = {'name':'418874ff-571b-46e2-a28a-75fe8afcb9e1', 'id':'30', 'description':'418874ff-571b-46e2-a28a-75fe8afcb9e1', 'vpnId':'010203:04056666'}
+pprint.pprint(c.get_vpn("418874ff-571b-46e2-a28a-75fe8afcb9e1"))
+print c.update_vpn("418874ff-571b-46e2-a28a-75fe8afcb9e1", data)
+pprint.pprint(c.get_vpn("418874ff-571b-46e2-a28a-75fe8afcb9e1"))
+data = {'name':'418874ff-571b-46e2-a28a-75fe8afcb9e1', 'id':'30', 'description':'418874ff-571b-46e2-a28a-75fe8afcb9e1', 'vpnId':'010203:04050607'}
+print c.update_vpn("418874ff-571b-46e2-a28a-75fe8afcb9e1", data)
+pprint.pprint(c.get_vpn("418874ff-571b-46e2-a28a-75fe8afcb9e1"))
+
+# Update scope
+test_name = "Update scope"
+print "\n======== {0} ========\n".format(test_name)
+data = {"name":"scope1", "subnet":"22.22.22.0/24", "restrictToReservations":"True", "vpnId":"30"}
+pprint.pprint(c.get_scope("scope1"))
+print c.update_scope("scope1", data)
+pprint.pprint(c.get_scope("scope1"))
+data = {"name":"scope1", "subnet":"2.2.2.0/24", "restrictToReservations":"True", "vpnId":"30"}
+print c.update_scope("scope1", data)
+pprint.pprint(c.get_scope("scope1"))
+
+# Delete policy
+test_name = "Delete policy"
+print "\n======== {0} ========\n".format(test_name)
+# Delete policy1
+print c.delete_policy("policy1")
+# Delete policy2
+print c.delete_policy("policy2")
+# Check if policies are deleted correctly
+pprint.pprint(c.get_policies())
+
+# Delete client class
+test_name = "Delete client class"
+print "\n======== {0} ========\n".format(test_name)
+print (c.delete_client_class("openstack-client-class"))
+# Check if client class is deleted correctly
+pprint.pprint(c.get_client_classes())
+
+# Delete VPN
+test_name = "Delete VPN"
+print "\n======== {0} ========\n".format(test_name)
+# Delete 418874ff-571b-46e2-a28a-75fe8afcb9e1
+print c.delete_vpn("418874ff-571b-46e2-a28a-75fe8afcb9e1")
+# Delete 418874ff-571b-46e2-a28a-75fe8afcb9e2
+VPN = c.delete_vpn("418874ff-571b-46e2-a28a-75fe8afcb9e2")
+# Check if VPNs are delete correctly
+pprint.pprint(c.get_vpns())
 
 print "\n================\n"
 
