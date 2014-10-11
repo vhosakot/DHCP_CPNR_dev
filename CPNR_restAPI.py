@@ -23,6 +23,7 @@ class CPNR_restApi:
         self.url = "http://" + self.CPNR_server_ip + ":" + str(self.CPNR_server_port) + "/"
         self.auth = HTTPBasicAuth(CPNR_server_username, CPNR_server_password)
         self.headers = {'Content-Type': 'application/json' , 'Accept': 'application/json'}
+        self._cpnr_reload_needed = False
 
     def __repr__(self):
         """__repr__ for the CPNR_restApi class"""
@@ -103,6 +104,19 @@ class CPNR_restApi:
         # Add later
         pass
 
+    def get_leases(self):
+        """Returns a list of all the leases from CPNR server"""
+        request_url = self.url + "web-services/rest/resource/Lease"
+        r = requests.request('GET', request_url, auth=self.auth, headers=self.headers)
+        # print r.json()
+        print r.status_code
+        if r.status_code == requests.codes.ok:
+            return r.json()
+        else:
+            print r.content
+            print r.status_code
+            return []
+
     def create_policy(self, data):
         """Returns status code after creating a policy with data dictionary"""
         request_url = self.url + "web-services/rest/resource/Policy"
@@ -110,6 +124,7 @@ class CPNR_restApi:
         r = requests.request('POST', request_url, data=json_dump, auth=self.auth, headers=self.headers)
         # print r.status_code
         print r.text
+        self._cpnr_reload_needed = True
         return r.status_code
 
     def create_scope(self, data):
@@ -119,6 +134,8 @@ class CPNR_restApi:
         r = requests.request('POST', request_url, data=json_dump, auth=self.auth, headers=self.headers)
         # print r.status_code
         print r.text
+        if "AX_DHCP_RELOAD_REQUIRED" in r.content:
+            self._cpnr_reload_needed = True
         return r.status_code
 
     def create_client_class(self, data):
@@ -128,6 +145,7 @@ class CPNR_restApi:
         r = requests.request('POST', request_url, data=json_dump, auth=self.auth, headers=self.headers)
         # print r.status_code
         print r.text
+        self._cpnr_reload_needed = True
         return r.status_code
 
     def create_vpn(self, data):
@@ -137,6 +155,7 @@ class CPNR_restApi:
         r = requests.request('POST', request_url, data=json_dump, auth=self.auth, headers=self.headers)
         # print r.status_code
         print r.text
+        self._cpnr_reload_needed = True
         return r.status_code
 
     def create_client_entry(self, data):
@@ -164,6 +183,7 @@ class CPNR_restApi:
         r = requests.request('PUT', request_url, data=json_dump, auth=self.auth, headers=self.headers)
         # print r.status_code
         print r.text
+        self._cpnr_reload_needed = True
         return r.status_code
 
     def update_client_class(self, client_class_name, data):
@@ -173,6 +193,7 @@ class CPNR_restApi:
         r = requests.request('PUT', request_url, data=json_dump, auth=self.auth, headers=self.headers)
         # print r.status_code
         print r.text
+        self._cpnr_reload_needed = True
         return r.status_code
 
     def update_vpn(self, vpn_name, data):
@@ -182,6 +203,7 @@ class CPNR_restApi:
         r = requests.request('PUT', request_url, data=json_dump, auth=self.auth, headers=self.headers)
         # print r.status_code
         print r.text
+        self._cpnr_reload_needed = True
         return r.status_code
 
     def update_scope(self, scope_name, data):
@@ -191,7 +213,13 @@ class CPNR_restApi:
         r = requests.request('PUT', request_url, data=json_dump, auth=self.auth, headers=self.headers)
         # print r.status_code
         print r.text
+        if "AX_DHCP_RELOAD_REQUIRED" in r.content:
+            self._cpnr_reload_needed = True
         return r.status_code
+
+    def update_client_entry(self):
+        # Add later
+        pass
 
     def delete_policy(self, policy_name):
         """Returns status code after deleting policy policy_name"""
@@ -199,6 +227,7 @@ class CPNR_restApi:
         r = requests.request('DELETE', request_url, auth=self.auth, headers=self.headers)
         # print r.status_code
         print r.text
+        self._cpnr_reload_needed = True
         return r.status_code
 
     def delete_client_class(self, client_class_name):
@@ -207,12 +236,38 @@ class CPNR_restApi:
         r = requests.request('DELETE', request_url, auth=self.auth, headers=self.headers)
         # print r.status_code
         print r.text
+        self._cpnr_reload_needed = True
         return r.status_code
 
     def delete_vpn(self, vpn_name):
         """Returns status code after deleting VPN vpn_name"""
         request_url = self.url + "web-services/rest/resource/VPN/" + vpn_name
         r = requests.request('DELETE', request_url, auth=self.auth, headers=self.headers)
+        # print r.status_code
+        print r.text
+        self._cpnr_reload_needed = True
+        return r.status_code
+
+    def delete_scope(self, scope_name):
+        """Returns status code after deleting scope scope_name"""
+        request_url = self.url + "web-services/rest/resource/Scope/" + scope_name
+        r = requests.request('DELETE', request_url, auth=self.auth, headers=self.headers)
+        # print r.status_code
+        print r.text
+        if "AX_DHCP_RELOAD_REQUIRED" in r.content:
+            self._cpnr_reload_needed = True
+        return r.status_code
+
+    def delete_client_entry(self):
+        # Add later
+        # After deleting the client entry, use VPN ID in 'name' and 'reservedAddresses' in data dictionary and call releaseAddress special function
+        pass
+
+    def reload_cpnr_server(self):
+        """Returns status code after reloading CPNR server"""
+        request_url = self.url + "web-services/rest/resource/DHCPServer" + "?action=reloadServer"
+        print "_cpnr_reload_needed = {0}".format(self._cpnr_reload_needed)
+        r = requests.request('PUT', request_url, auth=self.auth, headers=self.headers)
         # print r.status_code
         print r.text
         return r.status_code

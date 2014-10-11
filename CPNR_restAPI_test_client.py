@@ -4,6 +4,7 @@
 # Test client to unit-test CPNR_restAPI.py
 ########
 
+import sys
 import pprint
 from CPNR_restAPI import CPNR_restApi
 
@@ -49,9 +50,14 @@ print c.update_policy.__doc__
 print c.update_client_class.__doc__
 print c.update_vpn.__doc__
 print c.update_scope.__doc__
+print c.update_client_entry.__doc__
 print c.delete_policy.__doc__
 print c.delete_client_class.__doc__
 print c.delete_vpn.__doc__
+print c.delete_scope.__doc__
+print c.delete_client_entry.__doc__
+print c.get_leases.__doc__
+print c.reload_cpnr_server.__doc__
 
 # Print all attributes
 test_name = "Print all attributes"
@@ -62,6 +68,7 @@ print "c.CPNR_server_username = {0}".format(c.CPNR_server_username)
 print "c.auth                 = {0}".format(c.auth)
 print "c.headers              = {0}".format(c.headers)
 print "c.url                  = {0}".format(c.url)
+print "c._cpnr_reload_needed  = {0}".format(c._cpnr_reload_needed)
 
 # Get DHCPServer
 test_name = "Get DHCPServer"
@@ -135,6 +142,8 @@ data = {"name":"policy2", "optionList":{"OptionItem":[{"number":"600","value":"0
 print c.create_policy(data)
 # Get all policies
 pprint.pprint(c.get_policies())
+# Check _cpnr_reload_needed bool after creating policy
+print "c._cpnr_reload_needed  = {0}".format(c._cpnr_reload_needed)
 
 # Get a specific policy
 test_name = "Get a specific policy"
@@ -155,6 +164,8 @@ data = {"name":"scope2", "subnet":"3.3.3.0/24", "restrictToReservations":"True",
 print c.create_scope(data)
 # Get all scopes
 pprint.pprint(c.get_scopes())
+# Check _cpnr_reload_needed bool after creating scope
+print "c._cpnr_reload_needed  = {0}".format(c._cpnr_reload_needed)
 
 # Get a specific scope
 test_name = "Get a specific scope"
@@ -173,6 +184,8 @@ data = {"name":"openstack-client-class", "clientLookupId":"\"(request option 82 
 print c.create_client_class(data)
 # Get all ClientClasses
 pprint.pprint(c.get_client_classes())
+# Check _cpnr_reload_needed bool after creating client class
+print "c._cpnr_reload_needed  = {0}".format(c._cpnr_reload_needed)
 
 # Get a specific client class
 test_name = "Get a specific client class"
@@ -190,6 +203,8 @@ data = {'name':'418874ff-571b-46e2-a28a-75fe8afcb9e2', 'id':'40', 'description':
 print c.create_vpn(data)
 # Get all VPNs
 pprint.pprint(c.get_vpns())
+# Check _cpnr_reload_needed bool after creating VPN
+print "c._cpnr_reload_needed  = {0}".format(c._cpnr_reload_needed)
 
 # Get a specific VPN
 test_name = "Get a specific VPN"
@@ -205,14 +220,11 @@ pprint.pprint(VPN)
 test_name = "Create client entry with name, clientClassName, embeddedPolicy, hostName, reservedAddresses"
 print "\n======== {0} ========\n".format(test_name)
 Policy = c.get_policy("policy1")
-# data = {'clientClassName': 'openstack-client-class', 'embeddedPolicy': Policy, 'hostName': 'host-name-1', 'name': '010203:04050607-1:2:3:4:5:6', 'reservedAddresses': '2.2.2.2'}
-
-data = {'clientClassName': 'openstack-client-class', 'embeddedPolicy': {"optionList":{"OptionItem":[{"number":"51","value":"00:09:3a:80"}]}}, 'hostName': 'host-name-1', 'name': '010203:04050607-1:2:3:4:5:6', 'reservedAddresses': '2.2.2.2'}
-
+data = {'clientClassName': 'openstack-client-class', 'embeddedPolicy': Policy, 'hostName': 'host-name-1', 'name': '010203:04050607-1:2:3:4:5:6', 'reservedAddresses': '2.2.2.2'}
 print c.create_client_entry(data)
 Policy = c.get_policy("policy2")
 data = {'clientClassName': 'openstack-client-class', 'embeddedPolicy': Policy, 'hostName': 'host-name-2', 'name': '010203:04050608-1:2:3:4:5:7', 'reservedAddresses': '3.3.3.3'}
-# print c.create_client_entry(data)
+print c.create_client_entry(data)
 # Get all ClientEntries
 pprint.pprint(c.get_client_entries())
 
@@ -224,6 +236,8 @@ pprint.pprint(c.get_policy("policy1"))
 print c.update_policy("policy1", data)
 # Verify if policy1 is updated correctly
 pprint.pprint(c.get_policy("policy1"))
+# Check _cpnr_reload_needed bool after updating policy
+print "c._cpnr_reload_needed  = {0}".format(c._cpnr_reload_needed)
 
 # Update client class
 test_name = "Update client class"
@@ -235,6 +249,8 @@ pprint.pprint(c.get_client_class("openstack-client-class"))
 data = {"name":"openstack-client-class", "clientLookupId":"\"(request option 82 \"cisco-vpn-id\")-(request chaddr)\""}
 print c.update_client_class("openstack-client-class", data)
 pprint.pprint(c.get_client_class("openstack-client-class"))
+# Check _cpnr_reload_needed bool after updating client class
+print "c._cpnr_reload_needed  = {0}".format(c._cpnr_reload_needed)
 
 # Update VPN
 test_name = "Update VPN"
@@ -246,6 +262,8 @@ pprint.pprint(c.get_vpn("418874ff-571b-46e2-a28a-75fe8afcb9e1"))
 data = {'name':'418874ff-571b-46e2-a28a-75fe8afcb9e1', 'id':'30', 'description':'418874ff-571b-46e2-a28a-75fe8afcb9e1', 'vpnId':'010203:04050607'}
 print c.update_vpn("418874ff-571b-46e2-a28a-75fe8afcb9e1", data)
 pprint.pprint(c.get_vpn("418874ff-571b-46e2-a28a-75fe8afcb9e1"))
+# Check _cpnr_reload_needed bool after updating VPN
+print "c._cpnr_reload_needed  = {0}".format(c._cpnr_reload_needed)
 
 # Update scope
 test_name = "Update scope"
@@ -257,6 +275,23 @@ pprint.pprint(c.get_scope("scope1"))
 data = {"name":"scope1", "subnet":"2.2.2.0/24", "restrictToReservations":"True", "vpnId":"30"}
 print c.update_scope("scope1", data)
 pprint.pprint(c.get_scope("scope1"))
+# Check _cpnr_reload_needed bool after updating scope
+print "c._cpnr_reload_needed  = {0}".format(c._cpnr_reload_needed)
+
+# Reload CPNR server
+test_name = "Reload CPNR server"
+print "\n======== {0} ========\n".format(test_name)
+print c.reload_cpnr_server()
+
+# sys.exit(0)
+
+# Get all leases
+test_name = "Get all leases"
+print "\n======== {0} ========\n".format(test_name)
+Leases = c.get_leases()
+pprint.pprint(Leases)
+
+# Delete objects
 
 # Delete policy
 test_name = "Delete policy"
@@ -267,6 +302,8 @@ print c.delete_policy("policy1")
 print c.delete_policy("policy2")
 # Check if policies are deleted correctly
 pprint.pprint(c.get_policies())
+# Check _cpnr_reload_needed bool after deleting policy
+print "c._cpnr_reload_needed  = {0}".format(c._cpnr_reload_needed)
 
 # Delete client class
 test_name = "Delete client class"
@@ -274,6 +311,8 @@ print "\n======== {0} ========\n".format(test_name)
 print (c.delete_client_class("openstack-client-class"))
 # Check if client class is deleted correctly
 pprint.pprint(c.get_client_classes())
+# Check _cpnr_reload_needed bool after deleting client class
+print "c._cpnr_reload_needed  = {0}".format(c._cpnr_reload_needed)
 
 # Delete VPN
 test_name = "Delete VPN"
@@ -281,9 +320,23 @@ print "\n======== {0} ========\n".format(test_name)
 # Delete 418874ff-571b-46e2-a28a-75fe8afcb9e1
 print c.delete_vpn("418874ff-571b-46e2-a28a-75fe8afcb9e1")
 # Delete 418874ff-571b-46e2-a28a-75fe8afcb9e2
-VPN = c.delete_vpn("418874ff-571b-46e2-a28a-75fe8afcb9e2")
-# Check if VPNs are delete correctly
+print c.delete_vpn("418874ff-571b-46e2-a28a-75fe8afcb9e2")
+# Check if VPNs are deleted correctly
 pprint.pprint(c.get_vpns())
+# Check _cpnr_reload_needed bool after deleting VPN
+print "c._cpnr_reload_needed  = {0}".format(c._cpnr_reload_needed)
+
+# Delete scope
+test_name = "Delete scope"
+print "\n======== {0} ========\n".format(test_name)
+# Delete scope1
+print c.delete_scope("scope1")
+# Delete scope2
+print c.delete_scope("scope2")
+# Check if scope are deleted correctly
+pprint.pprint(c.get_scopes())
+# Check _cpnr_reload_needed bool after deleting scope
+print "c._cpnr_reload_needed  = {0}".format(c._cpnr_reload_needed)
 
 print "\n================\n"
 
