@@ -79,15 +79,20 @@ pprint.pprint(DHCPServer)
 # Update DHCPServer
 test_name = "Update DHCPServer"
 print "\n======== {0} ========\n".format(test_name)
+data = {"name":"DHCP", "clientClass":"True", "clientClassLookupId":"\"openstack-client-class\"", "deleteOrphanedLeases":"True"}
+print c.update_dhcp_server(data)
+pprint.pprint(c.get_dhcp_server())
+data = {"name":"DHCP", "clientClass":"False", "clientClassLookupId":"\"default\"", "deleteOrphanedLeases":"False"}
+print c.update_dhcp_server(data)
+pprint.pprint(c.get_dhcp_server())
 data = {"name":"DHCP", "clientClass":"True", "clientClassLookupId":"openstack-client-class", "deleteOrphanedLeases":"True"}
+# Set expressionConfigurationTraceLevel to 9 in the DHCPServer object to see more debugs in /var/nwreg2/local/logs/name_dhcp_1_log
+# data = {"name":"DHCP", "clientClass":"True", "clientClassLookupId":"\"openstack-client-class\"", "deleteOrphanedLeases":"True", "expressionConfigurationTraceLevel":9}
+data = {"name":"DHCP", "clientClass":"True", "clientClassLookupId":"\"openstack-client-class\"", "deleteOrphanedLeases":"True"}
 print c.update_dhcp_server(data)
 pprint.pprint(c.get_dhcp_server())
-data = {"name":"DHCP", "clientClass":"False", "clientClassLookupId":"default", "deleteOrphanedLeases":"False"}
-print c.update_dhcp_server(data)
-pprint.pprint(c.get_dhcp_server())
-data = {"name":"DHCP", "clientClass":"True", "clientClassLookupId":"openstack-client-class", "deleteOrphanedLeases":"True"}
-print c.update_dhcp_server(data)
-pprint.pprint(c.get_dhcp_server())
+# Check _cpnr_reload_needed bool after updating DHCPServer
+print "c._cpnr_reload_needed  = {0}".format(c._cpnr_reload_needed)
 
 # Get all policies
 test_name = "Get all policies"
@@ -126,12 +131,6 @@ test_name = "Get all ClientEntries"
 print "\n======== {0} ========\n".format(test_name)
 ClientEntries = c.get_client_entries()
 pprint.pprint(ClientEntries)
-
-# Get a specific ClientEntry
-test_name = "Get a specific ClientEntry"
-print "\n======== {0} ========\n".format(test_name)
-ClientEntry = c.get_client_entry()
-pprint.pprint(ClientEntry)
 
 # Create policy object with name, optionList
 test_name = "Create policy object with name, optionList"
@@ -181,6 +180,7 @@ pprint.pprint(Scope)
 test_name = "Create client class with name, clientLookupId"
 print "\n======== {0} ========\n".format(test_name)
 data = {"name":"openstack-client-class", "clientLookupId":"\"(request option 82 \"cisco-vpn-id\")-(request chaddr)\""}
+data = {"name":"openstack-client-class", "clientLookupId":"(concat (request option 82 151) \"-\" (request chaddr))"}
 print c.create_client_class(data)
 # Get all ClientClasses
 pprint.pprint(c.get_client_classes())
@@ -219,14 +219,22 @@ pprint.pprint(VPN)
 # Create client entry with name, clientClassName, embeddedPolicy, hostName, reservedAddresses
 test_name = "Create client entry with name, clientClassName, embeddedPolicy, hostName, reservedAddresses"
 print "\n======== {0} ========\n".format(test_name)
-Policy = c.get_policy("policy1")
-data = {'clientClassName': 'openstack-client-class', 'embeddedPolicy': Policy, 'hostName': 'host-name-1', 'name': '010203:04050607-1:2:3:4:5:6', 'reservedAddresses': '2.2.2.2'}
+data = {'clientClassName': 'openstack-client-class', 'embeddedPolicy': {'optionList':{'OptionItem':[{'number':'51','value':'00:09:3a:80'}]}}, 'hostName': 'host-name-1', 'name': '010203:04050607-1:2:3:4:5:6', 'reservedAddresses': [{'stringItem':'2.2.2.2'}]}
 print c.create_client_entry(data)
-Policy = c.get_policy("policy2")
-data = {'clientClassName': 'openstack-client-class', 'embeddedPolicy': Policy, 'hostName': 'host-name-2', 'name': '010203:04050608-1:2:3:4:5:7', 'reservedAddresses': '3.3.3.3'}
+data = {'clientClassName': 'openstack-client-class', 'embeddedPolicy': {'optionList':{'OptionItem':[{'number':'77','value':'00:09:4a:950'}]}}, 'hostName': 'host-name-2', 'name': '010203:04050608-11:22:33:44:55:66', 'reservedAddresses': [{'stringItem':'3.3.3.3'}]}
 print c.create_client_entry(data)
 # Get all ClientEntries
 pprint.pprint(c.get_client_entries())
+
+# Get a specific ClientEntry
+test_name = "Get a specific ClientEntry"
+print "\n======== {0} ========\n".format(test_name)
+# Get 010203:04050607-1:2:3:4:5:6
+ClientEntry = c.get_client_entry("010203:04050607-1:2:3:4:5:6")
+pprint.pprint(ClientEntry)
+# Get 010203:04050608-11:22:33:44:55:66
+ClientEntry = c.get_client_entry("010203:04050608-11:22:33:44:55:66")
+pprint.pprint(ClientEntry)
 
 # Update policy
 test_name = "Update policy"
@@ -247,6 +255,7 @@ pprint.pprint(c.get_client_class("openstack-client-class"))
 print c.update_client_class("openstack-client-class", data)
 pprint.pprint(c.get_client_class("openstack-client-class"))
 data = {"name":"openstack-client-class", "clientLookupId":"\"(request option 82 \"cisco-vpn-id\")-(request chaddr)\""}
+data = {"name":"openstack-client-class", "clientLookupId":"(concat (request option 82 151) \"-\" (request chaddr))"}
 print c.update_client_class("openstack-client-class", data)
 pprint.pprint(c.get_client_class("openstack-client-class"))
 # Check _cpnr_reload_needed bool after updating client class
@@ -278,18 +287,29 @@ pprint.pprint(c.get_scope("scope1"))
 # Check _cpnr_reload_needed bool after updating scope
 print "c._cpnr_reload_needed  = {0}".format(c._cpnr_reload_needed)
 
+# Update client entry
+test_name = "Update client entry"
+print "\n======== {0} ========\n".format(test_name)
+data = {'clientClassName': 'openstack-client-class', 'embeddedPolicy': {'optionList':{'OptionItem':[{'number':'7777','value':'00:09:4a:950'}]}}, 'hostName': 'host-name-2', 'name': '010203:04050608-11:22:33:44:55:66', 'reservedAddresses': [{'stringItem':'3.3.3.101'}]}
+pprint.pprint(c.get_client_entry("010203:04050608-11:22:33:44:55:66"))
+print c.update_client_entry("010203:04050608-11:22:33:44:55:66", data)
+pprint.pprint(c.get_client_entry("010203:04050608-11:22:33:44:55:66"))
+data = {'clientClassName': 'openstack-client-class', 'embeddedPolicy': {'optionList':{'OptionItem':[{'number':'77','value':'00:09:4a:950'}]}}, 'hostName': 'host-name-2', 'name': '010203:04050608-11:22:33:44:55:66', 'reservedAddresses': [{'stringItem':'3.3.3.3'}]}
+print c.update_client_entry("010203:04050608-11:22:33:44:55:66", data)
+pprint.pprint(c.get_client_entry("010203:04050608-11:22:33:44:55:66"))
+
 # Reload CPNR server
 test_name = "Reload CPNR server"
 print "\n======== {0} ========\n".format(test_name)
 print c.reload_cpnr_server()
-
-# sys.exit(0)
 
 # Get all leases
 test_name = "Get all leases"
 print "\n======== {0} ========\n".format(test_name)
 Leases = c.get_leases()
 pprint.pprint(Leases)
+
+# sys.exit(0)
 
 # Delete objects
 
@@ -333,9 +353,28 @@ print "\n======== {0} ========\n".format(test_name)
 print c.delete_scope("scope1")
 # Delete scope2
 print c.delete_scope("scope2")
-# Check if scope are deleted correctly
+# Check if scopes are deleted correctly
 pprint.pprint(c.get_scopes())
 # Check _cpnr_reload_needed bool after deleting scope
+print "c._cpnr_reload_needed  = {0}".format(c._cpnr_reload_needed)
+
+# Delete client entry
+test_name = "Delete client entry"
+print "\n======== {0} ========\n".format(test_name)
+# Delete 010203:04050607-1:2:3:4:5:6
+print c.delete_client_entry("010203:04050607-1:2:3:4:5:6")
+# Delete 010203:04050608-11:22:33:44:55:66
+print c.delete_client_entry("010203:04050608-11:22:33:44:55:66")
+# Check if client entries are deleted correctly
+pprint.pprint(c.get_client_entries())
+
+# Update DHCPServer with defaults
+test_name = "Update DHCPServer with defaults"
+print "\n======== {0} ========\n".format(test_name)
+data = {"name":"DHCP", "clientClass":"False", "clientClassLookupId":None, "deleteOrphanedLeases":"False"}
+print c.update_dhcp_server(data)
+pprint.pprint(c.get_dhcp_server())
+# Check _cpnr_reload_needed bool after updating DHCPServer
 print "c._cpnr_reload_needed  = {0}".format(c._cpnr_reload_needed)
 
 print "\n================\n"

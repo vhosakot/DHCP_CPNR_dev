@@ -100,9 +100,12 @@ class CPNR_restApi:
         # print r.json()
         return r.json()
 
-    def get_client_entry(self):
-        # Add later
-        pass
+    def get_client_entry(self, client_entry_name):
+        """Returns a dictionary with all the objects of a specific client entry name from CPNR server"""
+        request_url = self.url + "web-services/rest/resource/ClientEntry/" + client_entry_name
+        r = requests.request('GET', request_url, auth=self.auth, headers=self.headers)
+        # print r.json()
+        return r.json()
 
     def get_leases(self):
         """Returns a list of all the leases from CPNR server"""
@@ -174,6 +177,7 @@ class CPNR_restApi:
         r = requests.request('PUT', request_url, data=json_dump, auth=self.auth, headers=self.headers)
         # print r.status_code
         print r.text
+        self._cpnr_reload_needed = True
         return r.status_code
 
     def update_policy(self, policy_name, data):
@@ -217,9 +221,14 @@ class CPNR_restApi:
             self._cpnr_reload_needed = True
         return r.status_code
 
-    def update_client_entry(self):
-        # Add later
-        pass
+    def update_client_entry(self, client_entry_name, data):
+        """Returns status code after updating client entry client_entry_name with data dictionary"""
+        request_url = self.url + "web-services/rest/resource/ClientEntry/" + client_entry_name
+        json_dump = json.dumps(data)
+        r = requests.request('PUT', request_url, data=json_dump, auth=self.auth, headers=self.headers)
+        # print r.status_code
+        print r.text
+        return r.status_code
 
     def delete_policy(self, policy_name):
         """Returns status code after deleting policy policy_name"""
@@ -240,7 +249,8 @@ class CPNR_restApi:
         return r.status_code
 
     def delete_vpn(self, vpn_name):
-        """Returns status code after deleting VPN vpn_name"""
+        """Returns status code after deleting VPN vpn_name
+        delete_vpn must not be called before delete_client_entry"""
         request_url = self.url + "web-services/rest/resource/VPN/" + vpn_name
         r = requests.request('DELETE', request_url, auth=self.auth, headers=self.headers)
         # print r.status_code
@@ -258,17 +268,30 @@ class CPNR_restApi:
             self._cpnr_reload_needed = True
         return r.status_code
 
-    def delete_client_entry(self):
-        # Add later
-        # After deleting the client entry, use VPN ID in 'name' and 'reservedAddresses' in data dictionary and call releaseAddress special function
-        pass
+    def delete_client_entry(self, client_entry_name):
+        """Returns status code after deleting scope client_entry_name
+        delete_vpn must not be called before delete_client_entry"""
+        request_url = self.url + "web-services/rest/resource/ClientEntry/" + client_entry_name
+        ClientEntry = self.get_client_entry(client_entry_name)
+        print "ClientEntry's reservedAddresses = {0}".format(ClientEntry['reservedAddresses']['stringItem'][0])
+        print "ClientEntry's vpnId in name = {0}".format( (ClientEntry['name']).split('-')[0] )
+        r = requests.request('DELETE', request_url, auth=self.auth, headers=self.headers)
+        # print r.status_code
+        print r.text
+
+        # After deleting the client entry, call the releaseAddress special function with VPN ID in 'name' and 'reservedAddresses'
+        # The command below does not work due to a CPNR bug. Email sent to CPNR team.
+        # curl -u admin:changeme -X DELETE http://localhost:8888/web-services/rest/resource/Lease/10.10.0.21?action=releaseAddress&vpnId=30
+
+        return r.status_code
 
     def reload_cpnr_server(self):
         """Returns status code after reloading CPNR server"""
         request_url = self.url + "web-services/rest/resource/DHCPServer" + "?action=reloadServer"
         print "_cpnr_reload_needed = {0}".format(self._cpnr_reload_needed)
-        r = requests.request('PUT', request_url, auth=self.auth, headers=self.headers)
+        r = requests.request('PUT', request_url, auth=self.auth)
         # print r.status_code
+        self._cpnr_reload_needed = False
         print r.text
         return r.status_code
 
