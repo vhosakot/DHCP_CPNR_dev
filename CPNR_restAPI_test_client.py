@@ -69,6 +69,7 @@ print "c.auth                 = {0}".format(c.auth)
 print "c.headers              = {0}".format(c.headers)
 print "c.url                  = {0}".format(c.url)
 print "c._cpnr_reload_needed  = {0}".format(c._cpnr_reload_needed)
+print "c.timeout              = {0}".format(c.timeout)
 
 # Get DHCPServer
 test_name = "Get DHCPServer"
