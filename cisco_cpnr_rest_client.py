@@ -16,7 +16,7 @@
 
 #######################################################
 # Module that implements REST APIs for
-# Cisco's CPNR (Cisco Prime Network Registrar) serve
+# Cisco's CPNR (Cisco Prime Network Registrar) server
 #######################################################
 
 import requests

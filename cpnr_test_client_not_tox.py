@@ -15,12 +15,15 @@
 #    under the License.
 
 ########
-# Test client to unit-test CPNR_restAPI.py
+# Test client to unit-test cisco_cpnr_rest_client.py 
 ########
 
 import sys
 import pprint
+import logging
 from cisco_cpnr_rest_client import CpnrRestClient
+
+logging.basicConfig()
 
 # CPNR server info
 CPNRip = "192.168.122.247"
