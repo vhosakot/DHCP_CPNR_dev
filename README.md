@@ -17,16 +17,20 @@ test_linux_dhcp.py is the script that uses tox and a mock REST server to unit-te
 Below are the steps.
 
 1. Down neutron code from git.
+
 git clone https://github.com/openstack/neutron.git
 
 2. Install tox.
+
 apt-get install python-pip
+
 pip install tox
 
 https://wiki.openstack.org/wiki/Testing
 http://docs.openstack.org/developer/neutron/devref/development.environment.html
 
 3. cd into the neutron directory and make sure tox.ini file exists.
+
 cd neutron
 
 4. Run the command below to unit-test cisco_cpnr_rest_client.py using tox. There are 35 unit test cases.
