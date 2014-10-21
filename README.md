@@ -16,34 +16,35 @@ cpnr_test_client_not_tox.py is the script to unit-test cisco_cpnr_rest_client.py
 test_linux_dhcp.py is the script that uses tox and a mock REST server to unit-test cisco_cpnr_rest_client.py. test_linux_dhcp.py has 2 classes (TestCiscoCpnrRestBase and TestCiscoCpnrRest).
 Below are the steps.
 
-1. Down neutron code from git.
+Down neutron code from git.
 
-git clone https://github.com/openstack/neutron.git
+    git clone https://github.com/openstack/neutron.git
 
-2. Install tox.
+Install tox.
 
-apt-get install python-pip
+    apt-get install python-pip
 
-pip install tox
+    pip install tox
 
-https://wiki.openstack.org/wiki/Testing
-http://docs.openstack.org/developer/neutron/devref/development.environment.html
+    https://wiki.openstack.org/wiki/Testing
 
-3. cd into the neutron directory and make sure tox.ini file exists.
+    http://docs.openstack.org/developer/neutron/devref/development.environment.html
 
-cd neutron
+cd into the neutron directory and make sure tox.ini file exists.
 
-4. Copy cisco_cpnr_rest_client.py to neutron/agent/linux/.
+    cd neutron
 
-5. Copy test_linux_dhcp.py to neutron/tests/unit/.
+Copy cisco_cpnr_rest_client.py to neutron/agent/linux/.
 
-6. Run the command below to unit-test cisco_cpnr_rest_client.py using tox. There are 35 unit test cases.
+Copy test_linux_dhcp.py to neutron/tests/unit/.
 
-./run_tests.sh neutron.tests.unit.test_linux_dhcp.TestCiscoCpnrRest
+Run the command below to unit-test cisco_cpnr_rest_client.py using tox. There are 35 unit test cases.
 
-7. The unit tests can also be run using the command below.
+    ./run_tests.sh neutron.tests.unit.test_linux_dhcp.TestCiscoCpnrRest
 
-tox -e py27 neutron.tests.unit.test_linux_dhcp.TestCiscoCpnrRest
+The unit tests can also be run using the command below.
+
+    tox -e py27 neutron.tests.unit.test_linux_dhcp.TestCiscoCpnrRest
 
 ----------------
 
