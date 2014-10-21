@@ -33,11 +33,15 @@ http://docs.openstack.org/developer/neutron/devref/development.environment.html
 
 cd neutron
 
-4. Run the command below to unit-test cisco_cpnr_rest_client.py using tox. There are 35 unit test cases.
+4. Copy cisco_cpnr_rest_client.py to neutron/agent/linux/.
+
+5. Copy test_linux_dhcp.py to neutron/tests/unit/.
+
+6. Run the command below to unit-test cisco_cpnr_rest_client.py using tox. There are 35 unit test cases.
 
 ./run_tests.sh neutron.tests.unit.test_linux_dhcp.TestCiscoCpnrRest
 
-5. The unit tests can also be run using the command below.
+7. The unit tests can also be run using the command below.
 
 tox -e py27 neutron.tests.unit.test_linux_dhcp.TestCiscoCpnrRest
 
