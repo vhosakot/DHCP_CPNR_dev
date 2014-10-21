@@ -1372,10 +1372,11 @@ tag:tag0,option:router""".lstrip()
                                               exp_host_data)])
 
 
-class TestCiscoCpnrBase(base.BaseTestCase):
+class TestCiscoCpnrRestBase(base.BaseTestCase):
     """Base class to unit test Cisco's
        CPNR (Cisco Prime Network Registrar) REST client
-       cisco_cpnr_rest_client.py
+       cisco_cpnr_rest_client.py.
+       The tests use the requests_mock module to mock the CPNR server
     """
 
     CPNRip = "localhost"
@@ -1387,11 +1388,16 @@ class TestCiscoCpnrBase(base.BaseTestCase):
     REQUEST_URL = LOCAL_URL + URL_BASE
 
     def setUp(self):
-        super(TestCiscoCpnrBase, self).setUp()
+        super(TestCiscoCpnrRestBase, self).setUp()
         self.requests = self.useFixture(mock_fixture.Fixture())
+        self._register_local_get("DHCPServer",
+                                 json={u'clientClass': u'disabled',
+                                       u'name': u'DHCP',
+                                       u'objectOid':
+                                       u'OID-00:00:00:00:00:00:00:06',
+                                       u'deleteOrphanedLeases': u'false'})
         self.cpnr = cpnr_client.CpnrRestClient(self.CPNRip,
             self.CPNRport, self.CPNRusername, self.CPNRpassword)
-        dir(self.cpnr)
 
     def _register_local_get(self, uri, json=None,
                             result_code=requests.codes.OK):
@@ -1401,42 +1407,60 @@ class TestCiscoCpnrBase(base.BaseTestCase):
             status_code=result_code,
             json=json)
 
-    def _register_local_post(self, uri, resource_id,
+    def _register_local_post(self, uri,
                              result_code=requests.codes.CREATED):
         self.requests.register_uri(
             'POST',
-            self.LOCAL_URL + uri,
-            status_code=result_code,
-            headers={'location':
-                self.LOCAL_URL + uri + '/' + str(resource_id)})
+            self.REQUEST_URL + uri,
+            status_code=result_code)
 
-    def _register_local_delete(self, uri, resource_id, json=None,
+    def _register_local_delete(self, uri, json=None,
                                result_code=requests.codes.NO_CONTENT):
         self.requests.register_uri(
             'DELETE',
-            self.LOCAL_URL + uri + '/' + str(resource_id),
+            self.REQUEST_URL + uri,
             status_code=result_code,
             json=json)
 
-    def _register_local_put(self, uri, resource_id,
+    def _register_local_put(self, uri,
                             result_code=requests.codes.NO_CONTENT):
-        self.requests.register_uri('PUT',
-                                   self.LOCAL_URL + uri + '/' + resource_id,
-                                   status_code=result_code)
+        self.requests.register_uri(
+            'PUT',
+            self.REQUEST_URL + uri,
+            status_code=result_code)
 
-    def _register_local_get_not_found(self, uri, resource_id,
+    def _register_local_get_not_found(self, uri,
                                       result_code=requests.codes.NOT_FOUND):
         self.requests.register_uri(
             'GET',
-            self.LOCAL_URL + uri + '/' + str(resource_id),
+            self.REQUEST_URL + uri,
             status_code=result_code)
 
 
-class TestCiscoCpnrRest(TestCiscoCpnrBase):
+class TestCiscoCpnrRest(TestCiscoCpnrRestBase):
     """Class to unit test Cisco's
        CPNR (Cisco Prime Network Registrar) REST client
-       cisco_cpnr_rest_client.py
+       cisco_cpnr_rest_client.py.
+       The tests use the requests_mock module to mock the CPNR server
     """
+
+    def test_connect_to_cpnr(self):
+        """Test to connect to CPNR"""
+        self._register_local_get("DHCPServer",
+                                 json={u'clientClass': u'disabled',
+                                       u'name': u'DHCP',
+                                       u'objectOid':
+                                       u'OID-00:00:00:00:00:00:00:06',
+                                       u'deleteOrphanedLeases': u'false'})
+        actual = cpnr_client.CpnrRestClient(self.CPNRip,
+            self.CPNRport, self.CPNRusername, self.CPNRpassword)
+        self.assertIsNotNone(actual)
+
+    def test_badconnect_to_cpnr_failure(self):
+        """Test to connect to CPNR with invalid IP and port"""
+        actual = cpnr_client.CpnrRestClient("badIP",
+            "badPort", self.CPNRusername, self.CPNRpassword)
+        self.assertIsNotNone(actual)
 
     def test_get_dhcp_server(self):
         """Test get_dhcp_server"""
@@ -1449,6 +1473,7 @@ class TestCiscoCpnrRest(TestCiscoCpnrBase):
         actual = self.cpnr.get_dhcp_server()
         self.assertIn('name', actual)
         self.assertIsNotNone(actual['name'])
+        self.assertEqual(actual['name'], "DHCP")
 
     def test_get_policies(self):
         """Test get_policies"""
@@ -1465,6 +1490,22 @@ class TestCiscoCpnrRest(TestCiscoCpnrBase):
         actual = self.cpnr.get_policies()
         self.assertIn('name', actual)
         self.assertIsNotNone(actual['name'])
+        self.assertEqual(actual['name'], "default")
+
+    def test_get_policy(self):
+        """Test get_policy"""
+        self._register_local_get("Policy/policy1",
+                                 json={u'name': u'policy1',
+                                       u'objectOid':
+                                       u'OID-00:00:00:00:00:00:15:4a',
+                                       u'optionList':
+                                       {u'OptionItem': [{u'number': u'500',
+                                       u'value': u'00:09:3a:82'}]},
+                                       u'tenantId': u'0'})
+        actual = self.cpnr.get_policy("policy1")
+        self.assertIn('name', actual)
+        self.assertIsNotNone(actual['name'])
+        self.assertEqual(actual['name'], "policy1")
 
     def test_get_client_classes(self):
         """Test get_client_classes"""
@@ -1473,12 +1514,44 @@ class TestCiscoCpnrRest(TestCiscoCpnrBase):
         actual = self.cpnr.get_client_classes()
         self.assertEqual({}, actual)
 
+    def test_get_client_class(self):
+        """Test get_client_class"""
+        self._register_local_get("ClientClass/openstack-client-class",
+                                 json={u'clientLookupId':
+                                       u'test client class expression',
+                                       u'name': u'openstack-client-class',
+                                       u'objectOid':
+                                       u'OID-00:00:00:00:00:00:15:50',
+                                       u'tenantId': u'0'})
+        actual = self.cpnr.get_client_class("openstack-client-class")
+        self.assertIn('name', actual)
+        self.assertIsNotNone(actual['name'])
+        self.assertEqual(actual['name'], "openstack-client-class")
+
     def test_get_vpns(self):
         """Test get_vpns"""
         self._register_local_get("VPN",
                                  json={})
         actual = self.cpnr.get_vpns()
         self.assertEqual({}, actual)
+
+    def test_get_vpn(self):
+        """Test get_vpn"""
+        self._register_local_get("VPN/418874ff-571b-46e2-a28a-75fe8afcb9e1",
+                                 json={u'description':
+                                       u'418874ff-571b-46e2-a28a-75fe8afcb9e1',
+                                       u'id': u'30',
+                                       u'name':
+                                       u'418874ff-571b-46e2-a28a-75fe8afcb9e1',
+                                       u'objectOid':
+                                       u'OID-00:00:00:00:00:00:15:51',
+                                       u'tenantId': u'0',
+                                       u'vpnId': u'10203:4050607'})
+        actual = self.cpnr.get_vpn("418874ff-571b-46e2-a28a-75fe8afcb9e1")
+        self.assertIn('name', actual)
+        self.assertIsNotNone(actual['name'])
+        self.assertEqual(actual['name'],
+            "418874ff-571b-46e2-a28a-75fe8afcb9e1")
 
     def test_get_scopes(self):
         """Test get_scopes"""
@@ -1487,9 +1560,228 @@ class TestCiscoCpnrRest(TestCiscoCpnrBase):
         actual = self.cpnr.get_scopes()
         self.assertEqual({}, actual)
 
-    def test_get_client_entries(self):
-        """Test get_client_entries"""
+    def test_get_scope(self):
+        """Test get_scope"""
+        self._register_local_get("Scope/scope1",
+                                 json={u'name': u'scope1',
+                                 u'objectOid':
+                                 u'OID-00:00:00:00:00:00:15:4c',
+                                 u'policy': u'default',
+                                 u'restrictToReservations':
+                                 u'enabled',
+                                 u'subnet': u'2.2.2.0/24',
+                                 u'tenantId': u'0',
+                                 u'vpnId': u'30'})
+        actual = self.cpnr.get_scope("scope1")
+        self.assertIn('name', actual)
+        self.assertIsNotNone(actual['name'])
+        self.assertEqual(actual['name'], "scope1")
+
+    def test_get_client_enties(self):
+        """Test get_client_enties"""
         self._register_local_get("ClientEntry",
                                  json={})
         actual = self.cpnr.get_client_entries()
         self.assertEqual({}, actual)
+
+    def test_get_client_entry(self):
+        """Test get_client_entry"""
+        self._register_local_get("ClientEntry/010203:04050607-1:2:3:4:5:6",
+                                 json={u'clientClassName':
+                                       u'openstack-client-class',
+                                       u'embeddedPolicy':
+                                       {u'optionList':
+                                       {u'OptionItem': [{u'number': u'51',
+                                       u'value': u'00:09:3a:80'}]}},
+                                       u'hostName': u'host-name-1',
+                                       u'name':
+                                       u'010203:04050607-1:2:3:4:5:6',
+                                       u'objectOid':
+                                       u'OID-00:00:00:00:00:00:02:94',
+                                       u'reservedAddresses':
+                                       {u'stringItem': [u'2.2.2.2']},
+                                       u'tenantId': u'0'})
+        actual = self.cpnr.get_client_entry("010203:04050607-1:2:3:4:5:6")
+        self.assertIn('name', actual)
+        self.assertIsNotNone(actual['name'])
+        self.assertEqual(actual['name'], "010203:04050607-1:2:3:4:5:6")
+
+    def test_get_nonexistent_vpn_failure(self):
+        """Test get_vpn with nonexistent vpn"""
+        self._register_local_get_not_found("VPN/nonexistentVPN")
+        actual = self.cpnr.get_vpn("nonexistentVPN")
+        self.assertIsNone(actual)
+
+    def test_get_nonexistent_client_entry_failure(self):
+        """Test get_client_entry with nonexistent client entry"""
+        self._register_local_get_not_found("ClientEntry/\
+            nonexistentClientEntry")
+        actual = self.cpnr.get_vpn("nonexistentClientEntry")
+        self.assertIsNone(actual)
+
+    def test_create_policy(self):
+        """Test create_policy"""
+        self._register_local_post("Policy/policy1")
+        data = {"name": "policy1", "optionList":
+            {"OptionItem": [{"number": "500", "value": "00:09:3a:82"}]}}
+        actual = self.cpnr.create_policy(data)
+        self.assertIsNone(actual)
+
+    def test_create_client_class(self):
+        """Test create_client_class"""
+        self._register_local_post("ClientClass/openstack-client-class")
+        data = {"name": "openstack-client-class", "clientLookupId":
+            "(concat (request option 82 151) \"-\" (request chaddr))"}
+        actual = self.cpnr.create_client_class(data)
+        self.assertIsNone(actual)
+
+    def test_create_vpn(self):
+        """Test create_vpn"""
+        self._register_local_post("VPN/\
+            418874ff-571b-46e2-a28a-75fe8afcb9e1")
+        data = {'name': '418874ff-571b-46e2-a28a-75fe8afcb9e1', 'id': '30',
+            'description': '418874ff-571b-46e2-a28a-75fe8afcb9e1',
+            'vpnId': '010203:04050607'}
+        actual = self.cpnr.create_vpn(data)
+        self.assertIsNone(actual)
+
+    def test_create_scope(self):
+        """Test create_scope"""
+        self._register_local_post("Scope/scope1")
+        data = {"name": "scope1", "subnet": "2.2.2.0/24",
+            "restrictToReservations": "True", "vpnId": "30"}
+        actual = self.cpnr.create_scope(data)
+        self.assertIsNone(actual)
+
+    def test_create_client_entry(self):
+        """Test create_client_entry"""
+        self._register_local_post("ClientEntry/010203:04050607-1:2:3:4:5:6")
+        data = {'clientClassName': 'openstack-client-class', 'embeddedPolicy':
+            {'optionList': {'OptionItem': [{'number': '51', 'value':
+            '00:09:3a:80'}]}}, 'hostName': 'host-name-1', 'name':
+            '010203:04050607-1:2:3:4:5:6', 'reservedAddresses':
+            [{'stringItem': '2.2.2.2'}]}
+        actual = self.cpnr.create_client_entry(data)
+        self.assertIsNone(actual)
+
+    def test_post_empty_data_failure(self):
+        """"Test create_client_entry with empty data"""
+        self._register_local_post("ClientEntry/Empty",
+            result_code=requests.codes.BAD_REQUEST)
+        actual = self.cpnr.create_client_entry({})
+        self.assertIsNone(actual)
+
+    def test_post_already_exists_failure(self):
+        """"Test create_vpn for an already existing VPN"""
+        self._register_local_post("VPN/\
+            418874ff-571b-46e2-a28a-75fe8afcb9e1",
+            result_code=requests.codes.BAD_REQUEST)
+        data = {'name': '418874ff-571b-46e2-a28a-75fe8afcb9e1', 'id': '30',
+            'description': '418874ff-571b-46e2-a28a-75fe8afcb9e1',
+            'vpnId': '010203:04050607'}
+        actual = self.cpnr.create_client_entry(data)
+        self.assertIsNone(actual)
+
+    def test_update_dhcp_server(self):
+        """Test update_dhcp_server"""
+        self._register_local_put("DHCPServer")
+        data = {"name": "DHCP", "clientClass": "False",
+            "clientClassLookupId": "\"default\"",
+            "deleteOrphanedLeases": "False"}
+        actual = self.cpnr.update_dhcp_server(data)
+        self.assertIsNone(actual)
+
+    def test_update_policy(self):
+        """Test update_policy"""
+        self._register_local_put("Policy/policy1")
+        data = {"name": "policy1", "optionList": {"OptionItem":
+        [{"number": "501", "value": "00:09:3a:821"}]}}
+        actual = self.cpnr.update_policy("policy1", data)
+        self.assertIsNone(actual)
+
+    def test_update_client_class(self):
+        """Test update_client_class"""
+        self._register_local_put("ClientClass/openstack-client-class")
+        data = {"name": "openstack-client-class", "clientLookupId":
+            "\"(request option 82 \"cisco-vpn-id1\")-(request chaddr)\""}
+        actual = self.cpnr.update_client_class("openstack-client-class", data)
+        self.assertIsNone(actual)
+
+    def test_update_vpn(self):
+        """Test update_vpn"""
+        self._register_local_put("VPN/418874ff-571b-46e2-a28a-75fe8afcb9e1")
+        data = {'name': '418874ff-571b-46e2-a28a-75fe8afcb9e1', 'id': '30',
+            'description': '418874ff-571b-46e2-a28a-75fe8afcb9e1',
+            'vpnId': '010203:04056666'}
+        actual = self.cpnr.update_vpn("418874ff-571b-46e2-a28a-75fe8afcb9e1",
+            data)
+        self.assertIsNone(actual)
+
+    def test_update_scope(self):
+        """Test update_scope"""
+        self._register_local_put("Scope/scope1")
+        data = {"name": "scope1", "subnet": "22.22.22.0/24",
+            "restrictToReservations": "True", "vpnId": "30"}
+        actual = self.cpnr.update_scope("scope1", data)
+        self.assertIsNone(actual)
+
+    def test_update_client_entry(self):
+        """Test update_client_entry"""
+        self._register_local_put(
+            "ClientEntry/010203:04050608-11:22:33:44:55:66")
+        data = {'clientClassName': 'openstack-client-class', 'embeddedPolicy':
+            {'optionList': {'OptionItem': [{'number': '7777', 'value':
+            '00:09:4a:950'}]}}, 'hostName': 'host-name-2', 'name':
+            '010203:04050608-11:22:33:44:55:66', 'reservedAddresses':
+            [{'stringItem': '3.3.3.101'}]}
+        actual = self.cpnr.update_client_entry(
+            "010203:04050608-11:22:33:44:55:66", data)
+        self.assertIsNone(actual)
+
+    def test_update_nonexistent_vpn_failure(self):
+        """Test update_vpn with nonexistent vpn"""
+        self._register_local_put("VPN/nonexistentVPN",
+            requests.codes.BAD_REQUEST)
+        data = {'bad-field': 'for nonexistent vpn'}
+        actual = self.cpnr.update_vpn("nonexistentVPN", data)
+        self.assertIsNone(actual)
+
+    def test_delete_policy(self):
+        """Test delete_policy"""
+        self._register_local_delete("Policy/policy1")
+        actual = self.cpnr.delete_policy("policy1")
+        self.assertIsNone(actual)
+
+    def test_delete_client_class(self):
+        """Test delete_client_class"""
+        self._register_local_delete("ClientClass/openstack-client-class")
+        actual = self.cpnr.delete_client_class("openstack-client-class")
+        self.assertIsNone(actual)
+
+    def test_delete_vpn(self):
+        """Test delete_vpn"""
+        self._register_local_delete("VPN/418874ff-571b-46e2-a28a-75fe8afcb9e1")
+        actual = self.cpnr.delete_vpn(
+            "418874ff-571b-46e2-a28a-75fe8afcb9e1")
+        self.assertIsNone(actual)
+
+    def test_delete_scope(self):
+        """Test delete_scope"""
+        self._register_local_delete("Scope/scope1")
+        actual = self.cpnr.delete_scope("scope1")
+        self.assertIsNone(actual)
+
+    def test_delete_client_entry(self):
+        """Test delete_client_entry"""
+        self._register_local_delete(
+            "ClientEntry/010203:04050608-11:22:33:44:55:66")
+        actual = self.cpnr.delete_client_entry(
+            "010203:04050608-11:22:33:44:55:66")
+        self.assertIsNone(actual)
+
+    def test_delete_nonexistent_vpn_failure(self):
+        """Test delete_vpn with nonexistent vpn"""
+        self._register_local_delete("VPN/nonexistentVPN",
+            result_code=requests.codes.NOT_FOUND)
+        actual = self.cpnr.delete_vpn("nonexistentVPN")
+        self.assertIsNone(actual)

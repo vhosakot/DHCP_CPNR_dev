@@ -37,18 +37,33 @@ class CpnrRestClient:
     def __init__(self, CPNR_server_ip, CPNR_server_port, CPNR_server_username,
                  CPNR_server_password, timeout=20):
         """Constructor for the CPNR_restApi class"""
-        # Should CPNR_server_ip and CPNR_server_port be validated ?
-        self.CPNR_server_ip = CPNR_server_ip
-        self.CPNR_server_port = CPNR_server_port
-        self.CPNR_server_username = CPNR_server_username
-        self.url = "http://" + self.CPNR_server_ip + ":" + \
-                   str(self.CPNR_server_port)
-        self.auth = requests.auth.HTTPBasicAuth(CPNR_server_username,
-                    CPNR_server_password)
-        self.headers = {'Content-Type': 'application/json',
-                        'Accept': 'application/json'}
-        self._cpnr_reload_needed = False
-        self.timeout = timeout
+        try:
+            info = "CPNR_server_ip = " + CPNR_server_ip + ", " + \
+                   "CPNR_server_port = " +\
+                   str(CPNR_server_port) + ", " + \
+                   "CPNR_server_username = " +\
+                   CPNR_server_username + ", " + \
+                   "timeout = " + str(timeout)
+            LOG.debug("info = {0}".format(info))
+            self.CPNR_server_ip = CPNR_server_ip
+            self.CPNR_server_port = CPNR_server_port
+            self.CPNR_server_username = CPNR_server_username
+            self.url = "http://" + self.CPNR_server_ip + ":" + \
+                       str(self.CPNR_server_port)
+            self.auth = requests.auth.HTTPBasicAuth(CPNR_server_username,
+                        CPNR_server_password)
+            self.headers = {'Content-Type': 'application/json',
+                            'Accept': 'application/json'}
+            self._cpnr_reload_needed = False
+            self.timeout = timeout
+            cpnr_server = self.get_dhcp_server()
+            LOG.debug("cpnr_server = {0}".format(cpnr_server))
+        except Exception as e:
+            LOG.error(_LE("Unexpected error in constructor,"
+                "%(ex_type)s, %(ex_args)s. %(ex_info)s)"),
+                {'ex_type': str(type(e)),
+                 'ex_args': str(e.args),
+                 'ex_info': str(info)})
 
     def __repr__(self):
         """__repr__ for the CPNR_restApi class"""
