@@ -46,6 +46,7 @@ test_name = "Check docstrings of all methods"
 print "\n======== {0} ========\n".format(test_name)
 print c.__doc__
 print c.__init__.__doc__
+print c.get_cpnr_version.__doc__
 print c.get_dhcp_server.__doc__
 print c.get_policies.__doc__
 print c.get_policy.__doc__
