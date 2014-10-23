@@ -88,6 +88,11 @@ print "c.url                  = {0}".format(c.url)
 print "c._cpnr_reload_needed  = {0}".format(c._cpnr_reload_needed)
 print "c.timeout              = {0}".format(c.timeout)
 
+# Get CPNR version
+test_name = "Get CPNR version"
+print "\n======== {0} ========\n".format(test_name)
+print c.get_cpnr_version()
+
 # Get DHCPServer
 test_name = "Get DHCPServer"
 print "\n======== {0} ========\n".format(test_name)

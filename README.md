@@ -7,9 +7,9 @@ cisco_cpnr_rest_client.py is the REST client for CPNR (Cisco Prime Network Regis
 
 ----------------
 
-cpnr_test_client_not_tox.py is the script to unit-test cisco_cpnr_rest_client.py using a real CPNR server. cpnr_test_client_not_tox.py does not need tox to run. Below is the command to run it.
+cpnr_test_client_not_tox.py is the script to unit-test cisco_cpnr_rest_client.py using a real CPNR server. cpnr_test_client_not_tox.py does not need tox to run. Copy cisco_cpnr_rest_client.py and cpnr_test_client_not_tox.py into the same directory and use the command below to run it.
 
-./cpnr_test_client_not_tox.py
+    ./cpnr_test_client_not_tox.py
 
 ----------------
 

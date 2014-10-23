@@ -1454,13 +1454,42 @@ class TestCiscoCpnrRest(TestCiscoCpnrRestBase):
                                        u'deleteOrphanedLeases': u'false'})
         actual = cpnr_client.CpnrRestClient(self.CPNRip,
             self.CPNRport, self.CPNRusername, self.CPNRpassword)
+        if (self.CPNRip in str(actual) and
+            self.CPNRport in str(actual) and
+            self.CPNRusername in str(actual)):
+            pass
+        else:
+            raise Exception("test_connect_to_cpnr failed.\
+                actual = {0}".format(actual))
         self.assertIsNotNone(actual)
 
     def test_badconnect_to_cpnr_failure(self):
         """Test to connect to CPNR with invalid IP and port"""
+        self._register_local_get("DHCPServer",
+                                 json={u'badField': u'badValue'})
         actual = cpnr_client.CpnrRestClient("badIP",
             "badPort", self.CPNRusername, self.CPNRpassword)
+        if ("badIP" in str(actual) and
+            "badPort" in str(actual) and
+            self.CPNRusername in str(actual)):
+            pass
+        else:
+            raise Exception("test_badconnect_to_cpnr_failure failed.\
+                actual = {0}".format(actual))
         self.assertIsNotNone(actual)
+
+    def test_get_cpnr_version(self):
+        """Test get_cpnr_version"""
+        self.requests.register_uri(
+            'GET',
+            self.LOCAL_URL + "/web-services/rest/session",
+            status_code=requests.codes.OK,
+            json={'version':
+                  'Network Registrar 8.3 Local Cluster'})
+        actual = self.cpnr.get_cpnr_version()
+        self.assertIsNotNone(actual)
+        self.assertEqual(actual,
+            "{\"version\": \"Network Registrar 8.3 Local Cluster\"}")
 
     def test_get_dhcp_server(self):
         """Test get_dhcp_server"""

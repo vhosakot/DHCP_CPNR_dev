@@ -349,10 +349,53 @@ class CpnrRestClient:
 
     def reload_cpnr_server(self):
         """Returns status code after reloading CPNR server"""
-        request_url = self._build_url(['DHCPServer', '?action=reloadServer'])
-        LOG.debug("_cpnr_reload_needed = {0}".format(self._cpnr_reload_needed))
-        r = requests.request('PUT', request_url, auth=self.auth)
-        # print r.status_code
-        self._cpnr_reload_needed = False
-        # print r.text
-        return r.status_code
+        try:
+            request_url = self._build_url(['DHCPServer',
+                '?action=reloadServer'])
+            info = "method = " + "PUT" + ", " + \
+                   "request_url = " + request_url + ", " + \
+                   "CPNR_server_ip = " + self.CPNR_server_ip + ", " + \
+                   "CPNR_server_port = " +\
+                   str(self.CPNR_server_port) + ", " + \
+                   "CPNR_server_username = " +\
+                   self.CPNR_server_username + ", " + \
+                   "timeout = " + str(self.timeout)
+            LOG.debug("info = {0}".format(info))
+            LOG.debug("_cpnr_reload_needed = {0}".
+                format(self._cpnr_reload_needed))
+            r = requests.request('PUT', request_url, auth=self.auth)
+            # print r.status_code
+            self._cpnr_reload_needed = False
+            # print r.text
+            return r.status_code
+        except Exception as e:
+            LOG.error(_LE("Unexpected error in reload_cpnr_server,"
+                "%(ex_type)s, %(ex_args)s. %(ex_info)s)"),
+                {'ex_type': str(type(e)),
+                 'ex_args': str(e.args),
+                 'ex_info': str(info)})
+
+    def get_cpnr_version(self):
+        """Returns the CPNR version"""
+        try:
+            request_url = "/".join([self.url, "web-services/rest/session"])
+            info = "method = " + "GET" + ", " + \
+                   "request_url = " + request_url + ", " + \
+                   "CPNR_server_ip = " + self.CPNR_server_ip + ", " + \
+                   "CPNR_server_port = " +\
+                   str(self.CPNR_server_port) + ", " + \
+                   "CPNR_server_username = " +\
+                   self.CPNR_server_username + ", " + \
+                   "timeout = " + str(self.timeout)
+            LOG.debug("info = {0}".format(info))
+            LOG.debug("_cpnr_reload_needed = {0}".
+                format(self._cpnr_reload_needed))
+            r = requests.request('GET', request_url, auth=self.auth)
+            # print r.status_code
+            return str(r.text)
+        except Exception as e:
+            LOG.error(_LE("Unexpected error in get_cpnr_version,"
+                "%(ex_type)s, %(ex_args)s. %(ex_info)s)"),
+                {'ex_type': str(type(e)),
+                 'ex_args': str(e.args),
+                 'ex_info': str(info)})
