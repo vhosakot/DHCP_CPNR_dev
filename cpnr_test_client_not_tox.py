@@ -358,18 +358,6 @@ pprint.pprint(c.get_client_classes())
 # Check _cpnr_reload_needed bool after deleting client class
 print "c._cpnr_reload_needed  = {0}".format(c._cpnr_reload_needed)
 
-# Delete VPN
-test_name = "Delete VPN"
-print "\n======== {0} ========\n".format(test_name)
-# Delete 418874ff-571b-46e2-a28a-75fe8afcb9e1
-print c.delete_vpn("418874ff-571b-46e2-a28a-75fe8afcb9e1")
-# Delete 418874ff-571b-46e2-a28a-75fe8afcb9e2
-print c.delete_vpn("418874ff-571b-46e2-a28a-75fe8afcb9e2")
-# Check if VPNs are deleted correctly
-pprint.pprint(c.get_vpns())
-# Check _cpnr_reload_needed bool after deleting VPN
-print "c._cpnr_reload_needed  = {0}".format(c._cpnr_reload_needed)
-
 # Delete scope
 test_name = "Delete scope"
 print "\n======== {0} ========\n".format(test_name)
@@ -391,6 +379,18 @@ print c.delete_client_entry("010203:04050607-1:2:3:4:5:6")
 print c.delete_client_entry("010203:04050608-11:22:33:44:55:66")
 # Check if client entries are deleted correctly
 pprint.pprint(c.get_client_entries())
+
+# Delete VPN
+test_name = "Delete VPN"
+print "\n======== {0} ========\n".format(test_name)
+# Delete 418874ff-571b-46e2-a28a-75fe8afcb9e1
+print c.delete_vpn("418874ff-571b-46e2-a28a-75fe8afcb9e1")
+# Delete 418874ff-571b-46e2-a28a-75fe8afcb9e2
+print c.delete_vpn("418874ff-571b-46e2-a28a-75fe8afcb9e2")
+# Check if VPNs are deleted correctly
+pprint.pprint(c.get_vpns())
+# Check _cpnr_reload_needed bool after deleting VPN
+print "c._cpnr_reload_needed  = {0}".format(c._cpnr_reload_needed)
 
 # Update DHCPServer with defaults
 test_name = "Update DHCPServer with defaults"

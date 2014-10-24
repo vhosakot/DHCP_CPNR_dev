@@ -331,21 +331,48 @@ class CpnrRestClient:
         """Returns status code after deleting scope client_entry_name
         delete_vpn must not be called before delete_client_entry
         """
-        request_url = self._build_url(['ClientEntry', client_entry_name])
-        # ClientEntry = self.get_client_entry(client_entry_name)
-        # print "ClientEntry's reservedAddresses = {0}".format\
-        # (ClientEntry['reservedAddresses']['stringItem'][0])
-        # print "ClientEntry's vpnId in name = {0}".format\
-        # ((ClientEntry['name']).split('-')[0])
-        return self._do_request('DELETE', request_url)
+        try:
+            info = "CPNR_server_ip = " + self.CPNR_server_ip + ", " + \
+                   "CPNR_server_port = " +\
+                   str(self.CPNR_server_port) + ", " + \
+                   "CPNR_server_username = " +\
+                   self.CPNR_server_username + ", " + \
+                   "timeout = " + str(self.timeout)
+            LOG.debug("info = {0}".format(info))
+            ClientEntry = self.get_client_entry(client_entry_name)
+            reserved_ip = ClientEntry['reservedAddresses']['stringItem'][0]
+            vpn_id = (ClientEntry['name']).split('-')[0]
+            LOG.debug("ClientEntry's reservedAddresses = {0}".
+                format(reserved_ip))
+            LOG.debug("ClientEntry's vpnId in name = {0}".format(vpn_id))
+            request_url = self._build_url(['ClientEntry', client_entry_name])
+            self._do_request('DELETE', request_url)
 
-        # After deleting the client entry, call the releaseAddress special
-        # function with VPN ID in 'name' and 'reservedAddresses'
-        # The command below does not work due to a CPNR bug.
-        # Email sent to CPNR team.
-        # curl -u admin:changeme -X DELETE \
-        # http://localhost:8888/web-services/rest/resource/Lease/10.10.0.21\
-        # ?action=releaseAddress&vpnId=30
+            # Get id in VPN object
+            trimmed_vpn_id = []
+            for x in vpn_id.split(':'):
+                trimmed_vpn_id.append(x.lstrip("0"))
+            vpn_id = ":".join(trimmed_vpn_id)
+            vpn_id = "?vpnId=" + vpn_id
+            request_url = self._build_url(['VPN', vpn_id])
+            VPN = self._do_request('GET', request_url)
+            LOG.debug("VPN = {0}".format(VPN))
+            Id = VPN[0]['id']
+
+            # After deleting the client entry, call the releaseAddress special
+            # function with VPN ID in 'name' and 'reservedAddresses'
+            vpn_query = reserved_ip + "?action=releaseAddress&vpnId=" + Id
+            request_url = self._build_url(['Lease', vpn_query])
+            r = requests.request('GET', request_url, auth=self.auth,
+                headers=self.headers)
+            LOG.debug("response = {0}".format(r.text))
+            return r.status_code
+        except Exception as e:
+            LOG.error(_LE("Unexpected error in delete_client_entry,"
+                "%(ex_type)s, %(ex_args)s. %(ex_info)s)"),
+                {'ex_type': str(type(e)),
+                 'ex_args': str(e.args),
+                 'ex_info': str(info)})
 
     def reload_cpnr_server(self):
         """Returns status code after reloading CPNR server"""
