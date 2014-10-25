@@ -363,10 +363,7 @@ class CpnrRestClient:
             # function with VPN ID in 'name' and 'reservedAddresses'
             vpn_query = reserved_ip + "?action=releaseAddress&vpnId=" + Id
             request_url = self._build_url(['Lease', vpn_query])
-            r = requests.request('GET', request_url, auth=self.auth,
-                headers=self.headers)
-            LOG.debug("response = {0}".format(r.text))
-            return r.status_code
+            return self._do_request('DELETE', request_url)
         except Exception as e:
             LOG.error(_LE("Unexpected error in delete_client_entry,"
                 "%(ex_type)s, %(ex_args)s. %(ex_info)s)"),
