@@ -13,9 +13,9 @@
 #
 #    glance image-create --name Ubuntu-14.04-trusty-server-x86_64-QCOW2 --disk-format=qcow2 --container-format=bare --is-public=True < trusty-server-cloudimg-amd64-disk1.img
 #
-# 2. This script expects that a public network with 'public' as the network name exists.
-#    Hence, use the public subnet and create a public network with
-#    'public' as the network name.
+# 2. Change the value of the variable public_network_name_in_network_node below in this script
+#    to the name of the public network in the network node. In DevStack, the name of the
+#    public network in the network node is "public".
 #
 # Usage is: ./boot_dhcp_vm.py <number_of_DHCP_ports> [-delete]
 #
@@ -89,13 +89,17 @@ def get_nova_credentials_v2():
     d['project_id'] = os.environ['OS_TENANT_NAME']
     return d
 
-# Get DevStack neutron credentials
+# Change public_network_name_in_network_node below to the name of the public network in the
+# network node. In DevStack, the name of the public network is "public".
+public_network_name_in_network_node = "public"
+
+# Get neutron credentials
 neutron_credentials = get_neutron_credentials()
 
 # Initialize Neutron client
 neutron = neutron_client.Client(**neutron_credentials)
 
-# Get DevStack nova credentials
+# Get nova credentials
 nova_credentials = get_nova_credentials_v2()
 
 # Initialize Nova client
@@ -117,10 +121,10 @@ if expected_ubuntu_image_found is False:
     print "\n glance image-create --name Ubuntu-14.04-trusty-server-x86_64-QCOW2 --disk-format=qcow2 --container-format=bare --is-public=True < trusty-server-cloudimg-amd64-disk1.img\n"
     sys.exit(0)
 
-# Check if the public network exists
-if neutron.list_networks(name="public")['networks'] == []:
-    print "\n No public network found. Use the public subnet and"
-    print " create a public network with 'public' as the network name.\n"
+# Check if the public network with name public_network_name_in_network_node exists
+if neutron.list_networks(name=public_network_name_in_network_node)['networks'] == []:
+    print "\n Public network \'{0}\' NOT found in the network node.".format(public_network_name_in_network_node)
+    print " Set public_network_name_in_network_node to the name of the public network in the network node.\n"
     sys.exit(0)
  
 # Check if DHCP networks and the VM dhcp-scale-VM already exist
@@ -201,8 +205,8 @@ neutron.update_quota(tenant_id, body=json)
 cidr_second_byte = 0
 cidr_third_byte = 0
 
-# Find id of public network created by DevStack
-dhcp_public_network_id = neutron.list_networks(name="public")['networks'][0]['id']
+# Find id of public network in the network node
+dhcp_public_network_id = neutron.list_networks(name=public_network_name_in_network_node)['networks'][0]['id']
 
 # Create public network DHCP-public-network
 # json = {'network': {'name': 'DHCP-public-network', 'admin_state_up': True, 'router:external': True}}
@@ -321,11 +325,21 @@ print "Checking if floating IP is up. Please wait..."
 time.sleep(15)
 
 # Ping the external fixed IP of dhcp-scale-router
-dhcp_scale_router_external_fixed_ip = neutron.list_routers(name="dhcp-scale-router")['routers'][0]['external_gateway_info']['external_fixed_ips'][0]['ip_address']
+dhcp_scale_router_external_fixed_ip = "NULL"
+dhcp_scale_router_id = neutron.list_routers(name="dhcp-scale-router")['routers'][0]['id']
+
+if "external_fixed_ips" in neutron.list_routers(name="dhcp-scale-router")['routers'][0]['external_gateway_info']:
+    dhcp_scale_router_external_fixed_ip = neutron.list_routers(name="dhcp-scale-router")['routers'][0]['external_gateway_info']['external_fixed_ips'][0]['ip_address']
+else:
+    neutron_ports = neutron.list_ports()['ports']
+    for port in neutron_ports:
+        if port['device_id'] == dhcp_scale_router_id and port['device_owner'] == "network:router_gateway":
+            dhcp_scale_router_external_fixed_ip = port['fixed_ips'][0]['ip_address']
+            break
+
 ping_command1 = "ping -c 8 " + dhcp_scale_router_external_fixed_ip + " > /dev/null"
 
 # Ping 20.0.0.1 and 20.0.0.2 in the namespace of dhcp-scale-router
-dhcp_scale_router_id = neutron.list_routers(name="dhcp-scale-router")['routers'][0]['id']
 dhcp_scale_router_namespace = "qrouter-" + dhcp_scale_router_id
 ping_command2 = "sudo ip netns exec " + dhcp_scale_router_namespace + " ping -c 8 20.0.0.1" + " > /dev/null"
 ping_command3 = "sudo ip netns exec " + dhcp_scale_router_namespace + " ping -c 8 20.0.0.2" + " > /dev/null"
