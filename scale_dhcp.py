@@ -108,7 +108,6 @@ def measure_cpu_memory():
 
 test_passed = False
 unexpected_error_ouput = ""
-wait_time = 180  # 180 seconds
 vm_floating_ip = neutron.list_floatingips()['floatingips'][0]['floating_ip_address']
 
 # Check if /home/ubuntu/interface_bounce.sh exists in the VM. If not, copy interface_bounce.sh into the VM using scp
@@ -123,7 +122,7 @@ if output == "":
 
 # SSH into the VM dhcp-scale-vm
 ssh_command = "ssh -oStrictHostKeyChecking=no -i dhcp.pem ubuntu@" + vm_floating_ip
-child = spawn(ssh_command, timeout=300, logfile = sys.stdout)
+child = spawn(ssh_command, timeout=600, logfile = sys.stdout)
 child.expect('ubuntu@dhcp-scale-vm.*')
 
 # Check if '127.0.0.1 dhcp-scale-vm' exists in /etc/hosts
@@ -136,6 +135,7 @@ if "127.0.0.1" in command_output and "dhcp-scale-vm" in command_output:
     pass
 else:
     child.sendline("sudo bash -c \'echo -e \"\\n127.0.0.1 dhcp-scale-vm\" >> /etc/hosts\' 2> /dev/null")
+    child.expect('ubuntu@dhcp-scale-vm.*')
 
 child.sendline('chmod 777 /home/ubuntu/interface_bounce.sh')
 child.expect('ubuntu@dhcp-scale-vm.*')
@@ -173,12 +173,28 @@ time.sleep(30)
 child.sendline("ip address")
 child.expect('ubuntu@dhcp-scale-vm.*')
 
+# Turn all DHCP interfaces back on
+command = "./interface_bounce.sh " + str(vm_dhcp_bounce_interface_count) + " up"
+child.sendline(command)
+child.expect('ubuntu@dhcp-scale-vm.*')
+
+# Wait for 5 seconds before running dhclient on all the DHCP interfaces
+time.sleep(5)
+
+# Check if all the interfaces are back up with no IP address
+child.sendline("ip address")
+child.expect('ubuntu@dhcp-scale-vm.*')
+
+# Kill all old dhclient processes in the VM
+child.sendline("sudo pkill -f dhclient")
+child.expect('ubuntu@dhcp-scale-vm.*')
+
 # Measure CPU and memory usage every second in a different thread
 thread.start_new_thread(measure_cpu_memory, ())
 
 # Start the clock and turn on all the DHCP interfaces
 start = time.time()
-command = "./interface_bounce.sh " + str(vm_dhcp_bounce_interface_count) + " up"
+command = "./interface_bounce.sh " + str(vm_dhcp_bounce_interface_count) + " dhclient"
 child.sendline(command)
 child.expect('ubuntu@dhcp-scale-vm.*')
 
@@ -193,15 +209,14 @@ while 1:
     if len(child.before.splitlines()) >= 2 and child.before.splitlines()[1].isdigit():
         command_output = child.before.splitlines()[1]
     if int(command_output) != expected_number_of_lines_in_output:
-        if (time.time() - start < wait_time):
-            continue
-        else:
-            # If number of lines in the output of "ip address | wc -l" is not expected, break after wait_time has expired
-            test_passed = False
-            child.sendline("ip address")
-            child.expect('ubuntu@dhcp-scale-vm.*')
-            unexpected_error_ouput = child.before.splitlines()
-            break
+        # If number of lines in the output of "ip address | wc -l" is not expected, break and process the errors
+        end = time.time()
+        time_needed = end - start
+        test_passed = False
+        child.sendline("ip address")
+        child.expect('ubuntu@dhcp-scale-vm.*')
+        unexpected_error_ouput = child.before.splitlines()
+        break
     else:
         # The number of lines in the output of "ip address | wc -l" is correct. Note the time and break
         end = time.time()
@@ -211,9 +226,19 @@ while 1:
         test_passed = True
         break
 
+# Before exiting, generate dhclient.log on the VM dhcp-scale-VM
+command = "./interface_bounce.sh " + str(vm_dhcp_bounce_interface_count) + " generate_dhclient_log"
+child.sendline(command)
+child.expect('ubuntu@dhcp-scale-vm.*')
+
+# Kill all dhclient processes in the VM
+child.sendline("sudo pkill -f dhclient")
+child.expect('ubuntu@dhcp-scale-vm.*')
+
 child.sendline('exit')
 
 def find_missing_dhcp_ip(output, vm_mac_ip_list):
+    global vm_dhcp_bounce_interface_count
     output.remove(output[0])
     output.remove(output[len(output) - 1])
     index = 0
@@ -234,6 +259,8 @@ def find_missing_dhcp_ip(output, vm_mac_ip_list):
             chunk = chunk + line
         index = index + 1
 
+    missing_dhcp_ip_count = 0
+
     for mac_ip in vm_mac_ip_list:
         mac_ip_found_in_output = False
         for chunk in output_chunks:
@@ -245,11 +272,15 @@ def find_missing_dhcp_ip(output, vm_mac_ip_list):
                      vm_interface_name = chunk.split(" ")[1][:-1]
                      print "\n ERROR: Interface {0} with mac address {1} did NOT receive DHCP IP {2}. "\
                      "Waited {3} seconds\n".format(vm_interface_name, mac_ip['mac_addr'],
-                         mac_ip['ip'], wait_time)
+                         mac_ip['ip'], time_needed)
+                     missing_dhcp_ip_count = missing_dhcp_ip_count + 1
                      break
         if mac_ip_found_in_output is False:
             print "\n ERROR: Neutron port with mac address {0} and IP address {1} "\
             "not found on the VM\n".format(mac_ip['mac_addr'], mac_ip['ip'])
+    if missing_dhcp_ip_count > 0:
+        print "\n ERROR: {0} out of {1} DHCP interfaces did NOT receive IP address\n".format(missing_dhcp_ip_count,
+            vm_dhcp_bounce_interface_count)
 
 if test_passed is True:
     script_ended = True
