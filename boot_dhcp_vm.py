@@ -358,7 +358,7 @@ while 1:
     time.sleep(2)
     f = os.popen(ping_command4)
     ping_floating_ip_output = f.read()
-    if "0% packet loss" in ping_floating_ip_output:
+    if " 0% packet loss" in ping_floating_ip_output:
         print "\nFloating IP {0} is up!".format(floating_ip_address)
         break
     else:
