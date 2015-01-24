@@ -1,0 +1,516 @@
+
+======== Print CpnrRestClient object ========
+
+<CPNR_restApi(CPNR_server_ip=192.168.122.247, CPNR_server_port=8080, CPNR_server_username=cpnradmin, timeout=20)>
+<CPNR_restApi(CPNR_server_ip=192.168.122.247, CPNR_server_port=8080, CPNR_server_username=cpnradmin, timeout=20)>
+['CPNR_server_ip', 'CPNR_server_port', 'CPNR_server_username', '__doc__', '__init__', '__module__', '__repr__', '_build_url', '_cpnr_reload_needed', '_do_request', 'auth', 'create_client_class', 'create_client_entry', 'create_policy', 'create_scope', 'create_vpn', 'delete_client_class', 'delete_client_entry', 'delete_policy', 'delete_scope', 'delete_vpn', 'get_client_class', 'get_client_classes', 'get_client_entries', 'get_client_entry', 'get_cpnr_version', 'get_dhcp_server', 'get_leases', 'get_policies', 'get_policy', 'get_scope', 'get_scopes', 'get_vpn', 'get_vpns', 'headers', 'reload_cpnr_server', 'timeout', 'update_client_class', 'update_client_entry', 'update_dhcp_server', 'update_policy', 'update_scope', 'update_vpn', 'url']
+
+======== Check docstrings of all methods ========
+
+Class implementing REST APIs for
+    the CPNR (Cisco Prime Network Registrar) server
+    
+Constructor for the CPNR_restApi class
+Returns the CPNR version
+Returns a dictionary with all the objects of DHCPServer
+Returns a list of all the policies from CPNR server
+Returns a dictionary with all the objects of a specific policy
+        name from CPNR server
+        
+Returns a list of all the client classes from CPNR server
+Returns a dictionary with all the objects of a specific client
+        class name from CPNR server
+        
+Returns a list of all the VPNs from CPNR server
+Returns a dictionary with all the objects of a specific VPN name
+        from CPNR server
+        
+Returns a list of all the scopes from CPNR server
+Returns a dictionary with all the objects of a specific scope name
+        from CPNR server
+        
+Returns a list of all the client entries from CPNR server
+Returns a dictionary with all the objects of a specific client
+        entry name from CPNR server
+        
+Returns status code after creating a policy with data dictionary
+Returns status code after creating a scope with data dictionary
+Returns status code after updating dhcp server with data
+        dictionary
+        
+Returns status code after creating a client class with data
+        dictionary
+        
+Returns status code after creating a VPN with data dictionary
+Returns status code after creating a client entry with data
+        dictionary
+        
+Returns status code after updating policy policy_name with data
+        dictionary
+        
+Returns status code after updating client class client_class_name
+        with data dictionary
+        
+Returns status code after updating VPN vpn_name with data
+        dictionary
+        
+Returns status code after updating scope scope_name with data
+        dictionary
+        
+Returns status code after updating client entry client_entry_name
+        with data dictionary
+        
+Returns status code after deleting policy policy_name
+Returns status code after deleting client class client_class_name
+Returns status code after deleting VPN vpn_name
+        delete_vpn must not be called before delete_client_entry
+        
+Returns status code after deleting scope scope_name
+Returns status code after deleting scope client_entry_name
+        delete_vpn must not be called before delete_client_entry
+        
+Returns a list of all the leases from CPNR server
+Returns status code after reloading CPNR server
+
+======== Print all attributes ========
+
+c.CPNR_server_ip       = 192.168.122.247
+c.CPNR_server_port     = 8080
+c.CPNR_server_username = cpnradmin
+c.auth                 = <requests.auth.HTTPBasicAuth object at 0x7fa32ae05350>
+c.headers              = {'Content-Type': 'application/json', 'Accept': 'application/json'}
+c.url                  = http://192.168.122.247:8080
+c._cpnr_reload_needed  = False
+c.timeout              = 20
+
+======== Get CPNR version ========
+
+Network Registrar 8.3 Local Cluster
+Build #: Linux build #8.3.1501222120
+
+======== Get DHCPServer ========
+
+{u'clientClass': u'disabled',
+ u'deleteOrphanedLeases': u'false',
+ u'name': u'DHCP',
+ u'objectOid': u'OID-00:00:00:00:00:00:00:06'}
+
+======== Update DHCPServer ========
+
+200
+{u'clientClass': u'enabled',
+ u'clientClassLookupId': u'"openstack-client-class"',
+ u'deleteOrphanedLeases': u'true',
+ u'name': u'DHCP',
+ u'objectOid': u'OID-00:00:00:00:00:00:00:06'}
+200
+{u'clientClass': u'disabled',
+ u'clientClassLookupId': u'"default"',
+ u'deleteOrphanedLeases': u'false',
+ u'name': u'DHCP',
+ u'objectOid': u'OID-00:00:00:00:00:00:00:06'}
+200
+{u'clientClass': u'enabled',
+ u'clientClassLookupId': u'"openstack-client-class"',
+ u'deleteOrphanedLeases': u'true',
+ u'name': u'DHCP',
+ u'objectOid': u'OID-00:00:00:00:00:00:00:06'}
+c._cpnr_reload_needed  = True
+
+======== Get all policies ========
+
+[{u'gracePeriod': u'5m',
+  u'name': u'default',
+  u'objectOid': u'OID-00:00:00:00:00:00:00:04',
+  u'offerTimeout': u'2m',
+  u'optionList': {u'OptionItem': [{u'number': u'51',
+                                   u'value': u'00:09:3a:80'}]},
+  u'tenantId': u'0'},
+ {u'gracePeriod': u'5m',
+  u'name': u'system_default_policy',
+  u'objectOid': u'OID-00:00:00:00:00:00:00:03',
+  u'offerTimeout': u'2m',
+  u'optionList': {u'OptionItem': [{u'number': u'51',
+                                   u'value': u'00:09:3a:80'}]},
+  u'tenantId': u'0'}]
+
+======== Get a specific policy ========
+
+{u'gracePeriod': u'5m',
+ u'name': u'system_default_policy',
+ u'objectOid': u'OID-00:00:00:00:00:00:00:03',
+ u'offerTimeout': u'2m',
+ u'optionList': {u'OptionItem': [{u'number': u'51',
+                                  u'value': u'00:09:3a:80'}]},
+ u'tenantId': u'0'}
+{u'gracePeriod': u'5m',
+ u'name': u'default',
+ u'objectOid': u'OID-00:00:00:00:00:00:00:04',
+ u'offerTimeout': u'2m',
+ u'optionList': {u'OptionItem': [{u'number': u'51',
+                                  u'value': u'00:09:3a:80'}]},
+ u'tenantId': u'0'}
+
+======== Get all ClientClasses ========
+
+[]
+
+======== Get all VPNs ========
+
+[]
+
+======== Get all scopes ========
+
+[]
+
+======== Get all ClientEntries ========
+
+[]
+
+======== Create policy object with name, optionList ========
+
+201
+201
+[{u'gracePeriod': u'5m',
+  u'name': u'default',
+  u'objectOid': u'OID-00:00:00:00:00:00:00:04',
+  u'offerTimeout': u'2m',
+  u'optionList': {u'OptionItem': [{u'number': u'51',
+                                   u'value': u'00:09:3a:80'}]},
+  u'tenantId': u'0'},
+ {u'name': u'policy1',
+  u'objectOid': u'OID-00:00:00:00:00:00:29:0f',
+  u'optionList': {u'OptionItem': [{u'number': u'500',
+                                   u'value': u'00:09:3a:82'}]},
+  u'tenantId': u'0'},
+ {u'name': u'policy2',
+  u'objectOid': u'OID-00:00:00:00:00:00:29:10',
+  u'optionList': {u'OptionItem': [{u'number': u'600',
+                                   u'value': u'00:09:3a:83'}]},
+  u'tenantId': u'0'},
+ {u'gracePeriod': u'5m',
+  u'name': u'system_default_policy',
+  u'objectOid': u'OID-00:00:00:00:00:00:00:03',
+  u'offerTimeout': u'2m',
+  u'optionList': {u'OptionItem': [{u'number': u'51',
+                                   u'value': u'00:09:3a:80'}]},
+  u'tenantId': u'0'}]
+c._cpnr_reload_needed  = True
+
+======== Get a specific policy ========
+
+{u'name': u'policy1',
+ u'objectOid': u'OID-00:00:00:00:00:00:29:0f',
+ u'optionList': {u'OptionItem': [{u'number': u'500',
+                                  u'value': u'00:09:3a:82'}]},
+ u'tenantId': u'0'}
+{u'name': u'policy2',
+ u'objectOid': u'OID-00:00:00:00:00:00:29:10',
+ u'optionList': {u'OptionItem': [{u'number': u'600',
+                                  u'value': u'00:09:3a:83'}]},
+ u'tenantId': u'0'}
+
+======== Create scope object with name, subnet, restrictToReservations, vpnId ========
+
+201
+201
+[{u'name': u'scope1',
+  u'objectOid': u'OID-00:00:00:00:00:00:29:11',
+  u'policy': u'default',
+  u'restrictToReservations': u'enabled',
+  u'subnet': u'2.2.2.0/24',
+  u'tenantId': u'0',
+  u'vpnId': u'30'},
+ {u'name': u'scope2',
+  u'objectOid': u'OID-00:00:00:00:00:00:29:13',
+  u'policy': u'default',
+  u'restrictToReservations': u'enabled',
+  u'subnet': u'3.3.3.0/24',
+  u'tenantId': u'0',
+  u'vpnId': u'40'}]
+c._cpnr_reload_needed  = True
+
+======== Get a specific scope ========
+
+{u'name': u'scope1',
+ u'objectOid': u'OID-00:00:00:00:00:00:29:11',
+ u'policy': u'default',
+ u'restrictToReservations': u'enabled',
+ u'subnet': u'2.2.2.0/24',
+ u'tenantId': u'0',
+ u'vpnId': u'30'}
+{u'name': u'scope2',
+ u'objectOid': u'OID-00:00:00:00:00:00:29:13',
+ u'policy': u'default',
+ u'restrictToReservations': u'enabled',
+ u'subnet': u'3.3.3.0/24',
+ u'tenantId': u'0',
+ u'vpnId': u'40'}
+
+======== Create client class with name, clientLookupId ========
+
+201
+[{u'clientLookupId': u'(concat (request option 82 151) "-" (request chaddr))',
+  u'name': u'openstack-client-class',
+  u'objectOid': u'OID-00:00:00:00:00:00:29:15',
+  u'tenantId': u'0'}]
+c._cpnr_reload_needed  = True
+
+======== Get a specific client class ========
+
+{u'clientLookupId': u'(concat (request option 82 151) "-" (request chaddr))',
+ u'name': u'openstack-client-class',
+ u'objectOid': u'OID-00:00:00:00:00:00:29:15',
+ u'tenantId': u'0'}
+
+======== Create VPN with name, id, description, vpnId ========
+
+201
+201
+[{u'description': u'418874ff-571b-46e2-a28a-75fe8afcb9e1',
+  u'id': u'30',
+  u'name': u'418874ff-571b-46e2-a28a-75fe8afcb9e1',
+  u'objectOid': u'OID-00:00:00:00:00:00:29:16',
+  u'tenantId': u'0',
+  u'vpnId': u'10203:4050607'},
+ {u'description': u'418874ff-571b-46e2-a28a-75fe8afcb9e2',
+  u'id': u'40',
+  u'name': u'418874ff-571b-46e2-a28a-75fe8afcb9e2',
+  u'objectOid': u'OID-00:00:00:00:00:00:29:17',
+  u'tenantId': u'0',
+  u'vpnId': u'10203:4050608'}]
+c._cpnr_reload_needed  = True
+
+======== Get a specific VPN ========
+
+{u'description': u'418874ff-571b-46e2-a28a-75fe8afcb9e1',
+ u'id': u'30',
+ u'name': u'418874ff-571b-46e2-a28a-75fe8afcb9e1',
+ u'objectOid': u'OID-00:00:00:00:00:00:29:16',
+ u'tenantId': u'0',
+ u'vpnId': u'10203:4050607'}
+{u'description': u'418874ff-571b-46e2-a28a-75fe8afcb9e2',
+ u'id': u'40',
+ u'name': u'418874ff-571b-46e2-a28a-75fe8afcb9e2',
+ u'objectOid': u'OID-00:00:00:00:00:00:29:17',
+ u'tenantId': u'0',
+ u'vpnId': u'10203:4050608'}
+
+======== Create client entry with name, clientClassName, embeddedPolicy, hostName, reservedAddresses ========
+
+201
+201
+[{u'clientClassName': u'openstack-client-class',
+  u'embeddedPolicy': {u'optionList': {u'OptionItem': [{u'number': u'51',
+                                                       u'value': u'00:09:3a:80'}]}},
+  u'hostName': u'host-name-1',
+  u'name': u'010203:04050607-1:2:3:4:5:6',
+  u'objectOid': u'OID-00:00:00:00:00:00:03:6a',
+  u'reservedAddresses': {u'stringItem': [u'2.2.2.2']},
+  u'tenantId': u'0'},
+ {u'clientClassName': u'openstack-client-class',
+  u'embeddedPolicy': {u'optionList': {u'OptionItem': [{u'number': u'77',
+                                                       u'value': u'00:09:4a:09:50'}]}},
+  u'hostName': u'host-name-2',
+  u'name': u'010203:04050608-11:22:33:44:55:66',
+  u'objectOid': u'OID-00:00:00:00:00:00:03:6b',
+  u'reservedAddresses': {u'stringItem': [u'3.3.3.3']},
+  u'tenantId': u'0'}]
+
+======== Get a specific ClientEntry ========
+
+{u'clientClassName': u'openstack-client-class',
+ u'embeddedPolicy': {u'optionList': {u'OptionItem': [{u'number': u'51',
+                                                      u'value': u'00:09:3a:80'}]}},
+ u'hostName': u'host-name-1',
+ u'name': u'010203:04050607-1:2:3:4:5:6',
+ u'objectOid': u'OID-00:00:00:00:00:00:03:6a',
+ u'reservedAddresses': {u'stringItem': [u'2.2.2.2']},
+ u'tenantId': u'0'}
+{u'clientClassName': u'openstack-client-class',
+ u'embeddedPolicy': {u'optionList': {u'OptionItem': [{u'number': u'77',
+                                                      u'value': u'00:09:4a:09:50'}]}},
+ u'hostName': u'host-name-2',
+ u'name': u'010203:04050608-11:22:33:44:55:66',
+ u'objectOid': u'OID-00:00:00:00:00:00:03:6b',
+ u'reservedAddresses': {u'stringItem': [u'3.3.3.3']},
+ u'tenantId': u'0'}
+
+======== Update policy ========
+
+{u'name': u'policy1',
+ u'objectOid': u'OID-00:00:00:00:00:00:29:0f',
+ u'optionList': {u'OptionItem': [{u'number': u'500',
+                                  u'value': u'00:09:3a:82'}]},
+ u'tenantId': u'0'}
+200
+{u'name': u'policy1',
+ u'objectOid': u'OID-00:00:00:00:00:00:29:0f',
+ u'optionList': {u'OptionItem': [{u'number': u'501',
+                                  u'value': u'00:09:3a:08:21'}]},
+ u'tenantId': u'0'}
+c._cpnr_reload_needed  = True
+
+======== Update client class ========
+
+{u'clientLookupId': u'(concat (request option 82 151) "-" (request chaddr))',
+ u'name': u'openstack-client-class',
+ u'objectOid': u'OID-00:00:00:00:00:00:29:15',
+ u'tenantId': u'0'}
+200
+{u'clientLookupId': u'"(request option 82 cisco-vpn-id1)-(request chaddr)"',
+ u'name': u'openstack-client-class',
+ u'objectOid': u'OID-00:00:00:00:00:00:29:15',
+ u'tenantId': u'0'}
+200
+{u'clientLookupId': u'(concat (request option 82 151) "-" (request chaddr))',
+ u'name': u'openstack-client-class',
+ u'objectOid': u'OID-00:00:00:00:00:00:29:15',
+ u'tenantId': u'0'}
+c._cpnr_reload_needed  = True
+
+======== Update VPN ========
+
+{u'description': u'418874ff-571b-46e2-a28a-75fe8afcb9e1',
+ u'id': u'30',
+ u'name': u'418874ff-571b-46e2-a28a-75fe8afcb9e1',
+ u'objectOid': u'OID-00:00:00:00:00:00:29:16',
+ u'tenantId': u'0',
+ u'vpnId': u'10203:4050607'}
+200
+{u'description': u'418874ff-571b-46e2-a28a-75fe8afcb9e1',
+ u'id': u'30',
+ u'name': u'418874ff-571b-46e2-a28a-75fe8afcb9e1',
+ u'objectOid': u'OID-00:00:00:00:00:00:29:16',
+ u'tenantId': u'0',
+ u'vpnId': u'10203:4056666'}
+200
+{u'description': u'418874ff-571b-46e2-a28a-75fe8afcb9e1',
+ u'id': u'30',
+ u'name': u'418874ff-571b-46e2-a28a-75fe8afcb9e1',
+ u'objectOid': u'OID-00:00:00:00:00:00:29:16',
+ u'tenantId': u'0',
+ u'vpnId': u'10203:4050607'}
+c._cpnr_reload_needed  = True
+
+======== Update scope ========
+
+{u'name': u'scope1',
+ u'objectOid': u'OID-00:00:00:00:00:00:29:11',
+ u'policy': u'default',
+ u'restrictToReservations': u'enabled',
+ u'subnet': u'2.2.2.0/24',
+ u'tenantId': u'0',
+ u'vpnId': u'30'}
+200
+{u'name': u'scope1',
+ u'objectOid': u'OID-00:00:00:00:00:00:29:11',
+ u'policy': u'default',
+ u'restrictToReservations': u'enabled',
+ u'subnet': u'22.22.22.0/24',
+ u'tenantId': u'0',
+ u'vpnId': u'30'}
+200
+{u'name': u'scope1',
+ u'objectOid': u'OID-00:00:00:00:00:00:29:11',
+ u'policy': u'default',
+ u'restrictToReservations': u'enabled',
+ u'subnet': u'2.2.2.0/24',
+ u'tenantId': u'0',
+ u'vpnId': u'30'}
+c._cpnr_reload_needed  = True
+
+======== Update client entry ========
+
+{u'clientClassName': u'openstack-client-class',
+ u'embeddedPolicy': {u'optionList': {u'OptionItem': [{u'number': u'77',
+                                                      u'value': u'00:09:4a:09:50'}]}},
+ u'hostName': u'host-name-2',
+ u'name': u'010203:04050608-11:22:33:44:55:66',
+ u'objectOid': u'OID-00:00:00:00:00:00:03:6b',
+ u'reservedAddresses': {u'stringItem': [u'3.3.3.3']},
+ u'tenantId': u'0'}
+200
+{u'clientClassName': u'openstack-client-class',
+ u'embeddedPolicy': {u'optionList': {u'OptionItem': [{u'number': u'7777',
+                                                      u'value': u'00:09:4a:09:50'}]}},
+ u'hostName': u'host-name-2',
+ u'name': u'010203:04050608-11:22:33:44:55:66',
+ u'objectOid': u'OID-00:00:00:00:00:00:03:6b',
+ u'reservedAddresses': {u'stringItem': [u'3.3.3.101']},
+ u'tenantId': u'0'}
+200
+{u'clientClassName': u'openstack-client-class',
+ u'embeddedPolicy': {u'optionList': {u'OptionItem': [{u'number': u'77',
+                                                      u'value': u'00:09:4a:09:50'}]}},
+ u'hostName': u'host-name-2',
+ u'name': u'010203:04050608-11:22:33:44:55:66',
+ u'objectOid': u'OID-00:00:00:00:00:00:03:6b',
+ u'reservedAddresses': {u'stringItem': [u'3.3.3.3']},
+ u'tenantId': u'0'}
+
+======== Reload CPNR server ========
+
+200
+
+======== Get all leases ========
+
+[]
+
+======== Delete policy ========
+
+200
+200
+[{u'gracePeriod': u'5m',
+  u'name': u'default',
+  u'objectOid': u'OID-00:00:00:00:00:00:00:04',
+  u'offerTimeout': u'2m',
+  u'optionList': {u'OptionItem': [{u'number': u'51',
+                                   u'value': u'00:09:3a:80'}]},
+  u'tenantId': u'0'},
+ {u'gracePeriod': u'5m',
+  u'name': u'system_default_policy',
+  u'objectOid': u'OID-00:00:00:00:00:00:00:03',
+  u'offerTimeout': u'2m',
+  u'optionList': {u'OptionItem': [{u'number': u'51',
+                                   u'value': u'00:09:3a:80'}]},
+  u'tenantId': u'0'}]
+c._cpnr_reload_needed  = True
+
+======== Delete client class ========
+
+200
+[]
+c._cpnr_reload_needed  = True
+
+======== Delete scope ========
+
+200
+200
+[]
+c._cpnr_reload_needed  = True
+
+======== Delete client entry ========
+
+200
+200
+[]
+
+======== Delete VPN ========
+
+200
+200
+[]
+c._cpnr_reload_needed  = True
+
+======== Update DHCPServer with defaults ========
+
+200
+{u'clientClass': u'disabled',
+ u'deleteOrphanedLeases': u'false',
+ u'name': u'DHCP',
+ u'objectOid': u'OID-00:00:00:00:00:00:00:06'}
+c._cpnr_reload_needed  = True
+
+================
+

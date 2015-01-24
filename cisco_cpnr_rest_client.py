@@ -21,8 +21,10 @@ import requests
 from requests import exceptions as r_exc
 import time
 
-from neutron.openstack.common.gettextutils import _LE, _LW
-from neutron.openstack.common import jsonutils
+# from neutron.openstack.common.gettextutils import _LE, _LW
+from neutron.i18n import _LE, _LW
+# from neutron.openstack.common import jsonutils
+from oslo.serialization import jsonutils
 from neutron.openstack.common import log as logging
 
 LOG = logging.getLogger(__name__)
@@ -207,7 +209,7 @@ class CpnrRestClient:
 
     def get_scopes(self):
         """Returns a list of all the scopes from CPNR server"""
-        request_url = self._build_url(['Scope'])
+        request_url = self._build_url(['Scope?vpnId=.*'])
         return self._do_request('GET', request_url)
 
     def get_scope(self, scope_name):
