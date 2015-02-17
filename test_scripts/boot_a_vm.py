@@ -23,7 +23,7 @@ def get_nova_credentials_v2():
     d['project_id'] = os.environ['OS_TENANT_NAME']
     return d
 
-public_network_name_in_network_node = "EXTERNAL"
+public_network_name_in_network_node = "public"
 
 neutron_credentials = get_neutron_credentials()
 neutron = neutron_client.Client(**neutron_credentials)
@@ -34,14 +34,14 @@ nova_image_list = nova.images.list()
 expected_ubuntu_image_found = False
 
 for image in nova_image_list:
-    if image.name == "Nimbus-CentOS-6.5":
+    if image.name == "Ubuntu-14.04":
         expected_ubuntu_image_found = True
         break
 
 if expected_ubuntu_image_found is False:
-    print "\n Nimbus CentOS 6.5 image not found."
+    print "\n Ubuntu-14.04 image not found."
     print " Run the command below to create it."
-    print "\n glance image-create --name Nimbus-CentOS-6.5 --disk-format=qcow2 --container-format=bare --is-public=True < centos-6.5_x86_64-2014-09-22-v5rc24.raw\n"
+    print "\n glance image-create --name Ubuntu-14.04 --disk-format=qcow2 --container-format=bare --is-public=True < trusty-server-cloudimg-amd64-disk1.img\n"
     sys.exit(0)
 
 # Check if the public network with name public_network_name_in_network_node exists
@@ -50,20 +50,23 @@ if neutron.list_networks(name=public_network_name_in_network_node)['networks'] =
     print " Set public_network_name_in_network_node to the name of the public network in the network node.\n"
     sys.exit(0)
  
-# Check if DHCP networks and the VM nimbus-centos-6.5-VM already exist
-first_dhcp_network = neutron.list_networks(name="Nimbus-network")['networks']
+# Check if DHCP networks and the VM test-ubuntu-VM already exist
+first_dhcp_network = neutron.list_networks(name="test-network")['networks']
 if len(sys.argv) == 1 and first_dhcp_network != []:
-    print "\n Nimbus-network already exists."
-    VM = nova.servers.list(search_opts={'name':'nimbus-centos-6.5-VM'})
+    print "\n test-network already exists."
+    VM = nova.servers.list(search_opts={'name':'test-ubuntu-VM'})
     if VM != []:
-        print " nimbus-centos-6.5-VM already exists."
-        print " Run \"./boot_Nimbus_CentOS_6.5.py -delete\" to delete the VM."
+        floating_ip_address = neutron.list_floatingips()['floatingips'][0]['floating_ip_address']
+        print " test-ubuntu-VM already exists."
+        print "\n Use below command to SSH into test-ubuntu-VM\n"
+        print " ssh -oStrictHostKeyChecking=no -i vm.pem ubuntu@" + floating_ip_address + "\n"
+        print " Run \"./boot_a_vm.py -delete\" to delete the VM."
     print " Exiting...\n"
     sys.exit(0)
 
 # Delete port, subnet, network
 if len(sys.argv) == 2 and sys.argv[1] == "-delete":
-    os.system("rm -rf dhcp.pem")
+    os.system("rm -rf vm.pem")
 
     # Delete floating IP
     floatingip_id = neutron.list_floatingips()['floatingips'][0]['id']
@@ -71,33 +74,33 @@ if len(sys.argv) == 2 and sys.argv[1] == "-delete":
     print "Floating IP deleted"
  
     # neutron router-gateway-clear
-    dhcp_scale_router_id = neutron.list_routers(name="nimbus-router")['routers'][0]['id']
+    dhcp_scale_router_id = neutron.list_routers(name="test-router")['routers'][0]['id']
     neutron.remove_gateway_router(dhcp_scale_router_id)
 
     # neutron router-interface-delete
-    first_dhcp_subnet_id = neutron.list_subnets(name="Nimbus-subnet")['subnets'][0]['id']
+    first_dhcp_subnet_id = neutron.list_subnets(name="test-subnet")['subnets'][0]['id']
     json = {"subnet_id": first_dhcp_subnet_id}
     neutron.remove_interface_router(dhcp_scale_router_id, body=json)
 
-    # Delete router nimbus-router
+    # Delete router test-router
     neutron.delete_router(dhcp_scale_router_id)
-    print "nimbus-router deleted"
-    # Sleep for 3 seconds so router nimbus-router is deleted
+    print "test-router deleted"
+    # Sleep for 3 seconds so router test-router is deleted
     time.sleep(3)
 
     # Delete VM
-    VM = nova.servers.list(search_opts={'name':'nimbus-centos-6.5-VM'})[0] 
+    VM = nova.servers.list(search_opts={'name':'test-ubuntu-VM'})[0] 
     # Start the clock delete VM
     start = time.time()
     nova.servers.delete(VM)
     # Wait until VM is deleted, check once every 5 seconds
-    while nova.servers.list(search_opts={'name':'nimbus-centos-6.5-VM'}) != []:
+    while nova.servers.list(search_opts={'name':'test-ubuntu-VM'}) != []:
         end = time.time()
         print "Waiting for VM to be deleted... Waited {0} seconds".format(end-start)
         time.sleep(5)
         if (end-start) > 600:
             # Delete again if VM is not deleted after 10 mins
-            if nova.servers.list(search_opts={'name':'nimbus-centos-6.5-VM'}) != []:
+            if nova.servers.list(search_opts={'name':'test-ubuntu-VM'}) != []:
                 nova.servers.delete(VM)
     # Stop the clock
     end = time.time()
@@ -106,14 +109,14 @@ if len(sys.argv) == 2 and sys.argv[1] == "-delete":
     # Delete subnet
     subnets = neutron.list_subnets()['subnets']
     for subnet in subnets:
-        if "Nimbus" in subnet['name']:
+        if "test-subnet" in subnet['name']:
             neutron.delete_subnet(subnet['id'])
     print "All subnets deleted"
 
     # Delete network
     networks = neutron.list_networks()['networks']
     for network in networks:
-        if "Nimbus" in network['name']:
+        if "test-network" in network['name']:
             neutron.delete_network(network['id'])
     print "All networks deleted"
 
@@ -130,7 +133,7 @@ dhcp_public_network_id = neutron.list_networks(name=public_network_name_in_netwo
 network_list = []
 
 # Create network
-network_name = "Nimbus-network"
+network_name = "test-network"
 json = {'network': {'name': network_name, 'admin_state_up': True}}
 netw = neutron.create_network(body=json)
 net_dict = netw['network']
@@ -139,8 +142,8 @@ network_list.append(network_id)
 
 # Create subnet
 cidr = "250.0.0.0/24"
-gateway_ip = "250.0.0.0"
-subnet_name = "Nimbus-subnet"
+gateway_ip = "250.0.0.1"
+subnet_name = "test-subnet"
 json = {'subnets': [{'cidr': cidr,
                  'ip_version': 4,
                  'network_id': network_id,
@@ -150,8 +153,8 @@ subnet = neutron.create_subnet(body=json)
 print "{0}, {1} created with {2}".format(network_name, subnet_name, cidr) 
 
 # Get Nova image and flavor
-image = nova.images.find(name="Nimbus-CentOS-6.5")
-flavor = nova.flavors.find(name="m1.xlarge")
+image = nova.images.find(name="Ubuntu-14.04")
+flavor = nova.flavors.find(name="m1.large")
 
 nics = []
 for network_id in network_list:
@@ -165,19 +168,19 @@ os.system("nova secgroup-add-rule default tcp 22 22 0.0.0.0/0 2> /dev/null 1> /d
 
 # Create nova keypair needed for SSH
 # Run ssh-keygen is needed
-os.system("rm -rf dhcp.pem")
+os.system("rm -rf vm.pem")
 os.system("nova keypair-delete dhcp 2> /dev/null")
-os.system("nova keypair-add dhcp > dhcp.pem")
-os.system("chmod 600 dhcp.pem")
+os.system("nova keypair-add dhcp > vm.pem")
+os.system("chmod 600 vm.pem")
 
 # Start the clock and create VM
-print "\nCreating nimbus-centos-6.5-VM\n"
+print "\nCreating test-ubuntu-VM\n"
 start = time.time()
-VM = nova.servers.create(name="nimbus-centos-6.5-VM", image=image, flavor=flavor, key_name="dhcp", nics=nics)
+VM = nova.servers.create(name="test-ubuntu-VM", image=image, flavor=flavor, key_name="dhcp", nics=nics)
 
 # Wait until VM reaches ACTIVE state, check once every 5 seconds
 while 1:
-    VM = nova.servers.list(search_opts={'name':'nimbus-centos-6.5-VM'})[0]
+    VM = nova.servers.list(search_opts={'name':'test-ubuntu-VM'})[0]
     if VM.status == "ACTIVE":
         # Stop the clock
         end = time.time()
@@ -189,12 +192,12 @@ while 1:
         time.sleep(5)
 
 # Add router before creating floating IP - neutron router-create
-json = {"router": {"name": "nimbus-router", "admin_state_up": True}}
+json = {"router": {"name": "test-router", "admin_state_up": True}}
 result = neutron.create_router(body=json)
-dhcp_scale_router_id = neutron.list_routers(name="nimbus-router")['routers'][0]['id']
+dhcp_scale_router_id = neutron.list_routers(name="test-router")['routers'][0]['id']
 
 # neutron router-interface-add
-first_dhcp_subnet_id = neutron.list_subnets(name="Nimbus-subnet")['subnets'][0]['id']
+first_dhcp_subnet_id = neutron.list_subnets(name="test-subnet")['subnets'][0]['id']
 json = {"subnet_id": first_dhcp_subnet_id}
 result = neutron.add_interface_router(dhcp_scale_router_id, body=json)
 
@@ -202,12 +205,12 @@ result = neutron.add_interface_router(dhcp_scale_router_id, body=json)
 json = {"network_id": dhcp_public_network_id}
 result = neutron.add_gateway_router(dhcp_scale_router_id, body=json)
 
-print "nimbus-router created"
+print "test-router created"
 
-# Create floating IP with fixed IP of Nimbus-network
-VM = nova.servers.list(search_opts={'name':'nimbus-centos-6.5-VM'})[0]
-fixed_ip = VM.addresses['Nimbus-network'][0]['addr']
-first_dhcp_network_id = neutron.list_networks(name="Nimbus-network")['networks'][0]['id']
+# Create floating IP with fixed IP of test-network
+VM = nova.servers.list(search_opts={'name':'test-ubuntu-VM'})[0]
+fixed_ip = VM.addresses['test-network'][0]['addr']
+first_dhcp_network_id = neutron.list_networks(name="test-network")['networks'][0]['id']
 ports_in_first_dhcp_network = neutron.list_ports(network_id=first_dhcp_network_id)['ports']
 fixed_ip_port_id = ""
 for port in ports_in_first_dhcp_network:
@@ -221,12 +224,12 @@ print "Floating IP created\n"
 print "Checking if floating IP is up. Please wait..."
 time.sleep(15)
 
-# Ping the external fixed IP of nimbus-router
+# Ping the external fixed IP of test-router
 dhcp_scale_router_external_fixed_ip = "NULL"
-dhcp_scale_router_id = neutron.list_routers(name="nimbus-router")['routers'][0]['id']
+dhcp_scale_router_id = neutron.list_routers(name="test-router")['routers'][0]['id']
 
-if "external_fixed_ips" in neutron.list_routers(name="nimbus-router")['routers'][0]['external_gateway_info']:
-    dhcp_scale_router_external_fixed_ip = neutron.list_routers(name="nimbus-router")['routers'][0]['external_gateway_info']['external_fixed_ips'][0]['ip_address']
+if "external_fixed_ips" in neutron.list_routers(name="test-router")['routers'][0]['external_gateway_info']:
+    dhcp_scale_router_external_fixed_ip = neutron.list_routers(name="test-router")['routers'][0]['external_gateway_info']['external_fixed_ips'][0]['ip_address']
 else:
     neutron_ports = neutron.list_ports()['ports']
     for port in neutron_ports:
@@ -236,7 +239,7 @@ else:
 
 ping_command1 = "ping -c 8 " + dhcp_scale_router_external_fixed_ip + " > /dev/null"
 
-# Ping 250.0.0.1 and 250.0.0.2 in the namespace of nimbus-router
+# Ping 250.0.0.1 and 250.0.0.2 in the namespace of test-router
 dhcp_scale_router_namespace = "qrouter-" + dhcp_scale_router_id
 ping_command2 = "sudo ip netns exec " + dhcp_scale_router_namespace + " ping -c 8 250.0.0.1" + " > /dev/null"
 ping_command3 = "sudo ip netns exec " + dhcp_scale_router_namespace + " ping -c 8 250.0.0.2" + " > /dev/null"
@@ -272,5 +275,5 @@ while 1:
 # For Fedora image, SSH username is fedora and no password is needed
 # For Ubuntu image, SSH username is ubuntu and no password is needed
 
-print "\n  Use below command to SSH into nimbus-centos-6.5-VM\n"
-print "  ssh -oStrictHostKeyChecking=no -i dhcp.pem ubuntu@" + floating_ip_address + "\n"
+print "\n  Use below command to SSH into test-ubuntu-VM\n"
+print "  ssh -oStrictHostKeyChecking=no -i vm.pem ubuntu@" + floating_ip_address + "\n"
