@@ -68,43 +68,46 @@ if len(sys.argv) == 1 and first_dhcp_network != []:
 if len(sys.argv) == 2 and sys.argv[1] == "-delete":
     os.system("rm -rf vm.pem")
 
-    # Delete floating IP
-    floatingip_id = neutron.list_floatingips()['floatingips'][0]['id']
-    neutron.delete_floatingip(floatingip_id)
-    print "Floating IP deleted"
+    # Delete floating IP if it exists
+    if neutron.list_floatingips()['floatingips'] != []:
+        floatingip_id = neutron.list_floatingips()['floatingips'][0]['id']
+        neutron.delete_floatingip(floatingip_id)
+        print "Floating IP deleted"
  
-    # neutron router-gateway-clear
-    dhcp_scale_router_id = neutron.list_routers(name="test-router")['routers'][0]['id']
-    neutron.remove_gateway_router(dhcp_scale_router_id)
+    if neutron.list_routers(name="test-router")['routers'] != []:
+        # neutron router-gateway-clear
+        dhcp_scale_router_id = neutron.list_routers(name="test-router")['routers'][0]['id']
+        neutron.remove_gateway_router(dhcp_scale_router_id)
 
-    # neutron router-interface-delete
-    first_dhcp_subnet_id = neutron.list_subnets(name="test-subnet")['subnets'][0]['id']
-    json = {"subnet_id": first_dhcp_subnet_id}
-    neutron.remove_interface_router(dhcp_scale_router_id, body=json)
+        # neutron router-interface-delete
+        first_dhcp_subnet_id = neutron.list_subnets(name="test-subnet")['subnets'][0]['id']
+        json = {"subnet_id": first_dhcp_subnet_id}
+        neutron.remove_interface_router(dhcp_scale_router_id, body=json)
 
-    # Delete router test-router
-    neutron.delete_router(dhcp_scale_router_id)
-    print "test-router deleted"
-    # Sleep for 3 seconds so router test-router is deleted
-    time.sleep(3)
+        # Delete router test-router
+        neutron.delete_router(dhcp_scale_router_id)
+        print "test-router deleted"
+        # Sleep for 3 seconds so router test-router is deleted
+        time.sleep(3)
 
-    # Delete VM
-    VM = nova.servers.list(search_opts={'name':'test-ubuntu-VM'})[0] 
-    # Start the clock delete VM
-    start = time.time()
-    nova.servers.delete(VM)
-    # Wait until VM is deleted, check once every 5 seconds
-    while nova.servers.list(search_opts={'name':'test-ubuntu-VM'}) != []:
+    # Delete VM if it exists
+    if nova.servers.list(search_opts={'name':'test-ubuntu-VM'}) != []:
+        VM = nova.servers.list(search_opts={'name':'test-ubuntu-VM'})[0] 
+        # Start the clock delete VM
+        start = time.time()
+        nova.servers.delete(VM)
+        # Wait until VM is deleted, check once every 5 seconds
+        while nova.servers.list(search_opts={'name':'test-ubuntu-VM'}) != []:
+            end = time.time()
+            print "Waiting for VM to be deleted... Waited {0} seconds".format(end-start)
+            time.sleep(5)
+            if (end-start) > 600:
+                # Delete again if VM is not deleted after 10 mins
+                if nova.servers.list(search_opts={'name':'test-ubuntu-VM'}) != []:
+                    nova.servers.delete(VM)
+        # Stop the clock
         end = time.time()
-        print "Waiting for VM to be deleted... Waited {0} seconds".format(end-start)
-        time.sleep(5)
-        if (end-start) > 600:
-            # Delete again if VM is not deleted after 10 mins
-            if nova.servers.list(search_opts={'name':'test-ubuntu-VM'}) != []:
-                nova.servers.delete(VM)
-    # Stop the clock
-    end = time.time()
-    print "\nVM deleted, took {0} seconds\n".format(end-start)
+        print "\nVM deleted, took {0} seconds\n".format(end-start)
 
     # Delete subnet
     subnets = neutron.list_subnets()['subnets']
