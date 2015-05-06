@@ -91,7 +91,7 @@ if len(sys.argv) == 2 and sys.argv[1] == "-delete":
         if "DHCP" in port['name']:
             pool.apply_async(t_delete_port, (port['id'],))
 
-    print "\nWaiting for DHCP ports to be deleted....\n"
+    # print "\nWaiting for DHCP ports to be deleted....\n"
 
     while True:
         try:
@@ -111,7 +111,7 @@ if len(sys.argv) == 2 and sys.argv[1] == "-delete":
     for subnet in subnets:
         if "DHCP" in subnet['name']:
             neutron.delete_subnet(subnet['id'])
-    print "All DHCP test subnets deleted"
+    # print "All DHCP test subnets deleted"
 
     # Delete all DHCP test networks
     networks = neutron.list_networks()['networks']
@@ -120,21 +120,11 @@ if len(sys.argv) == 2 and sys.argv[1] == "-delete":
             ns = "qdhcp-" + str(network['id'])
             neutron.delete_network(network['id'])
             os.system("sudo ip netns delete " + ns + " &> /dev/null")
-    print "All DHCP test networks and namespaces deleted\n"
+    # print "All DHCP test networks and namespaces deleted\n"
 
     os.system("./device_manager.py -delete > /dev/null")
-
-    ################
-    os.system("sudo pkill -f port_network_churn.py")
-    time.sleep(2)
-    os.system("sudo pkill -f port_network_churn.py")
-    time.sleep(2)
-    os.system("./port_network_churn.py -delete")
-    time.sleep(2)
-    os.system("./port_network_churn.py -delete")
-    ################
-
-    print "Done!\n"
+ 
+    # print "\nDone!\n")
 
     sys.exit(0)
 
@@ -213,7 +203,7 @@ if "-delete" not in sys.argv:
             if output[0] != "0":
                 print "{0} : {1} ports created".format(str(datetime.now()), output[0])
             if output[0] == str(dhcp_ports_per_network * network_count):
-                print "\nDone!\n"
+                # print "\nDone!\n"
                 break
             else:
                 time.sleep(5)

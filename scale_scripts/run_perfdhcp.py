@@ -1,8 +1,21 @@
 #! /usr/bin/python
 
+# Usage is : ./run_perfdhcp.py <dhcp_ports_per_network_to_churn> <networks_to_churn>
+# Example  : ./run_perfdhcp.py 5 5
+
 import os
 import time
 import thread
+import sys
+from neutronclient.v2_0 import client as neutron_client
+
+def get_neutron_credentials():
+    d = {}
+    d['username'] = os.environ['OS_USERNAME']
+    d['password'] = os.environ['OS_PASSWORD']
+    d['auth_url'] = os.environ['OS_AUTH_URL']
+    d['tenant_name'] = os.environ['OS_TENANT_NAME']
+    return d
 
 os.system("rm -rf *.log")
 
@@ -19,11 +32,19 @@ output = f.read()
 output = output.splitlines()
 dhcp_network_count = int(output[0])
 
+if dhcp_network_count == 0:
+    print "\n ERROR 1: run_perfdhcp.py failed with error\n"
+    sys.exit(0)
+
 f = os.popen("neutron port-list | grep DHCP | wc -l 2> /dev/null")
 output = f.read()
 output = output.splitlines()
 dhcp_ports = int(output[0])
 dhcp_ports_per_network = dhcp_ports / dhcp_network_count
+
+if dhcp_ports_per_network == 0:
+    print "\n ERROR 2: run_perfdhcp.py failed with error\n"
+    sys.exit(0)
 
 script_ended = False
 cpu_filename = ""
@@ -121,10 +142,175 @@ def measure_cpu_memory():
         cpu_mem_file.close()
         return
 
+def t_create_port(json):
+    neutron_credentials = get_neutron_credentials()
+    neutron = neutron_client.Client(**neutron_credentials)
+
+    for j in range(0, 4):
+        try:
+            port = neutron.create_port(body=json)
+            break
+        except:
+            continue
+
+def t_delete_port(port_id):
+    neutron_credentials = get_neutron_credentials()
+    neutron = neutron_client.Client(**neutron_credentials)
+
+    for j in range(0, 4):
+        try:
+            neutron.delete_port(port_id)
+            break
+        except:
+            continue
+
+def t_create_network_subnet_port(n, new_ports_new_network):
+    neutron_credentials = get_neutron_credentials()
+    neutron = neutron_client.Client(**neutron_credentials)
+
+    # Create DHCP network
+    network_name = "new-network-" + str(n)
+    json = {'network': {'name': network_name, 'admin_state_up': True}}
+    for j in range(0, 4):
+        try:
+            netw = neutron.create_network(body=json)
+            break
+        except:
+            continue
+    net_dict = netw['network']
+    network_id = net_dict['id']
+
+    # Create DHCP subnet
+    cidr = "252." + str(n % 254) + ".0.0/16"
+    gateway_ip = "252." + str(n % 254) + ".0.1"
+    subnet_name = "new-subnet-" + str(n)
+    json = {'subnets': [{'cidr': cidr,
+                     'ip_version': 4,
+                     'network_id': network_id,
+                     'gateway_ip': gateway_ip,
+                     'name': subnet_name}]}
+    for j in range(0, 4):
+        try:
+            subnet = neutron.create_subnet(body=json)
+            break
+        except:
+            continue
+
+    # Create DHCP ports in each new network
+    for j in range(0, new_ports_new_network):
+        json = {'port': {
+            'admin_state_up': True,
+            'name': "port-in-new-network-" + str(n) + "-" + str(j),
+            'network_id': network_id}}
+        thread.start_new_thread(t_create_port, (json,))
+
+networks_to_churn = 3
+dhcp_ports_per_network_to_churn = 5
+delay_during_churn = 60
+
+# Usage is : ./run_perfdhcp.py <dhcp_ports_per_network_to_churn> <networks_to_churn>
+# Example  : ./run_perfdhcp.py 5 5
+if len(sys.argv) == 3 and sys.argv[1].isdigit() and sys.argv[2].isdigit():
+    dhcp_ports_per_network_to_churn = int(sys.argv[1])
+    networks_to_churn = int(sys.argv[2])
+
+def churn_ports_in_existing_dhcp_networks():
+    global script_ended
+    global dhcp_network_count
+    global dhcp_ports_per_network_to_churn
+    network_ids = []
+    n = 0
+
+    for i in range(0, dhcp_network_count):
+        network_name = "DHCP-network-" + str(i)
+        for j in range(0, 4):
+            try:
+                network_ids.append(neutron.list_networks(name=network_name)['networks'][0]['id'])
+                break
+            except:
+                continue
+
+    while script_ended is False:
+        # Create ports in each existing DHCP network
+        for network_id in network_ids:
+            for j in range(0, dhcp_ports_per_network_to_churn):
+                json = {'port': {
+                    'admin_state_up': True,
+                    'name': "port-in-existing-network-" + str(n),
+                    'network_id': network_id}}
+                thread.start_new_thread(t_create_port, (json,))
+                n = n + 1
+
+        # Sleep for few seconds after creating ports
+        time.sleep(delay_during_churn)
+
+        # Delete ports in each existing DHCP network
+        f = os.popen("neutron port-list | grep port-in-existing-network- | awk \'{print $2}\' 2> /dev/null")
+        output = f.read()
+        output = output.splitlines()
+        for port_id in output:
+            thread.start_new_thread(t_delete_port, (port_id,))
+
+        # Sleep after deleting ports
+        time.sleep(2)
+
+def churn_ports_in_new_dhcp_networks():
+    global script_ended
+    global networks_to_churn
+    global dhcp_ports_per_network_to_churn
+    n = 0
+
+    while script_ended is False:
+        # Create new DHCP networks, subnets and ports
+        for i in range(0, networks_to_churn):
+            thread.start_new_thread(t_create_network_subnet_port, (n, dhcp_ports_per_network_to_churn))
+            n = n + 1
+
+        # Sleep for few seconds after creating networks, subnets and ports
+        time.sleep(delay_during_churn)
+
+        # Delete ports in each new DHCP network
+        f = os.popen("neutron port-list | grep port-in-new-network- | awk \'{print $2}\' 2> /dev/null")
+        output = f.read()
+        output = output.splitlines()
+        for port_id in output:
+            thread.start_new_thread(t_delete_port, (port_id,))
+
+        # Sleep after deleting ports
+        time.sleep(2)
+
+        # Delete new DHCP subnets
+        f = os.popen("neutron subnet-list | grep new-subnet- | awk \'{print $2}\' 2> /dev/null")
+        output = f.read()
+        output = output.splitlines()
+        for subnet_id in output:
+            try:
+                neutron.delete_subnet(subnet_id)
+            except:
+                pass
+
+        # Delete new DHCP networks
+        f = os.popen("neutron net-list | grep new-network- | awk \'{print $2}\' 2> /dev/null")
+        output = f.read()
+        output = output.splitlines()
+        for network_id in output:
+            ns = "qdhcp-" + network_id
+            try:
+                neutron.delete_network(network_id)
+                os.system("sudo ip netns delete " + ns + " &> /dev/null")
+            except:
+                os.system("sudo ip netns delete " + ns + " &> /dev/null")
+                pass
+
+        # Sleep after deleting subnets and networks
+        time.sleep(2)
+
 # Start measuring CPU and memory usage in a separate thread before running perfdhcp
 thread.start_new_thread(measure_cpu_memory, ())
 
 # Start port churn and network churn in a separate thread before running perfdhcp
+thread.start_new_thread(churn_ports_in_existing_dhcp_networks, ())
+thread.start_new_thread(churn_ports_in_new_dhcp_networks, ())
 
 for i in range(0, dhcp_network_count):
     testns = "testns-DHCP-network-" + str(i)
@@ -135,8 +321,8 @@ for i in range(0, dhcp_network_count):
     output = output.splitlines()
     test_tap_interface = output[0].split()[1].split(':')[0]
 
-    cmd = "sudo ip netns exec " + testns + " /usr/local/sbin/perfdhcp -4 -b mac=fa:16:00:00:00:00 -r " + str(dhcp_ports_per_network) + " -R " + str(dhcp_ports_per_network) + " -n " + str(dhcp_ports_per_network) + " -l " + test_tap_interface + " &> " + logfile + " &"
-    print cmd
+    cmd = "sudo ip netns exec " + testns + " /usr/local/sbin/perfdhcp -4 -b mac=fa:16:00:00:00:00 -r " + str(dhcp_ports_per_network) + " -R " + str(dhcp_ports_per_network) + " -p 120" + " -l " + test_tap_interface + " &> " + logfile + " &"
+    print "\n" + cmd
     os.system(cmd)
 
 # Wait for perfdhcp in all test namespaces to complete
@@ -151,17 +337,40 @@ while True:
     else:
         time.sleep(1)
 
-# Wait for measure_cpu_memory running in a separate thread to stop
-time.sleep(5)
+# Wait for measure_cpu_memory and port-churn and network-churn
+# running in a separate thread to stop
+time.sleep(10)
 
-# Wait for port churn and network churn running in a separate thread to stop
-os.system("sudo pkill -f port_network_churn.py")
-time.sleep(2)
-os.system("sudo pkill -f port_network_churn.py")
-time.sleep(2)
-os.system("./port_network_churn.py -delete")
-time.sleep(2)
-os.system("./port_network_churn.py -delete")
+neutron_credentials = get_neutron_credentials()
+neutron = neutron_client.Client(**neutron_credentials)
+
+# Delete remaining churned networks, subnets and ports
+f = os.popen("neutron port-list | grep 'existing\|new' | awk \'{print $2}\' 2> /dev/null")
+output = f.read()
+output = output.splitlines()
+for i in output:
+    try:
+        neutron.delete_port(i)
+    except:
+        pass
+
+f = os.popen("neutron subnet-list | grep new | awk \'{print $2}\' 2> /dev/null")
+output = f.read()
+output = output.splitlines()
+for i in output:
+    try:
+        neutron.delete_subnet(i)
+    except:
+        pass
+
+f = os.popen("neutron net-list | grep new | awk \'{print $2}\' 2> /dev/null")
+output = f.read()
+output = output.splitlines()
+for i in output:
+    try:
+        neutron.delete_network(i)
+    except:
+        pass
 
 def parse_logfiles():
     min_delay = 0.0
@@ -182,14 +391,7 @@ def parse_logfiles():
             print "\n  ERROR: {0} has errors.\n".format(logfile)
             continue
 
-        if (output[0] == "0" and output[1] == "0"):
-            # No packets were dropped
-            pass
-        else:
-            print "\n================================"
-            print "\n  ERROR: {0} has dropped packets.\n".format(logfile)
-            os.system("cat " + logfile)
-            print "\n================================\n"
+        print "Number of packets drops  =  {0}".format(int(output[0]) + int(output[1]))
 
         f = os.popen("grep -A 10 REQUEST-ACK " + logfile + " | grep min | awk \'{print $3}\' 2> /dev/null")
         output = f.read()
@@ -231,6 +433,13 @@ output = output.splitlines()
 for line in output:
     print line
 
-# os.system("rm -rf *.log")
+# Copy logfiles to perfdhcp_logs directory
+if not os.path.isdir("perfdhcp_logs"):
+    os.mkdir("perfdhcp_logs")
+
+f = os.popen("mv *.log perfdhcp_logs")
+output = f.read()
+output = output.splitlines()
+os.system("rm -rf *.log")
 
 print ""

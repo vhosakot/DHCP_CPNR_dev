@@ -33,7 +33,7 @@ if len(sys.argv) == 2 and sys.argv[1] == "-delete":
     test_tap_interface_list = output.splitlines()
     for test_tap_interface in test_tap_interface_list:
         cmd = "ovs-vsctl del-port " + test_tap_interface
-        print cmd
+        # print cmd
         os.system(cmd)
     sys.exit(0)
 
