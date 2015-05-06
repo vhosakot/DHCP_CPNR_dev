@@ -34,9 +34,9 @@ def cleanup():
         neutron = neutron_client.Client(**neutron_credentials)
 
         # Kill perfdhcp if running
-        os.system("sudo pkill -f port_network_churn.py")
+        os.system("sudo pkill -f perfdhcp")
         time.sleep(1)
-        os.system("sudo pkill -f port_network_churn.py")
+        os.system("sudo pkill -f perfdhcp")
 
         # Delete neutron logs
         os.system("rm -rf /var/log/neutron/*.gz")
