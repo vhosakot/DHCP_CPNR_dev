@@ -23,6 +23,9 @@ dhcp_ports_per_network = 1
 
 if len(sys.argv) == 3 and sys.argv[1].isdigit() and sys.argv[2].isdigit():
     dhcp_ports_per_network = int(sys.argv[2])
+elif len(sys.argv) == 3:
+    print "\n Wrong usage\n"
+    sys.exit(0)
 
 def get_neutron_credentials():
     d = {}

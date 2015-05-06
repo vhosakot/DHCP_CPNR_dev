@@ -337,6 +337,8 @@ while True:
     else:
         time.sleep(1)
 
+print "perfdhcp ended\n"
+
 # Wait for measure_cpu_memory and port-churn and network-churn
 # running in a separate thread to stop
 time.sleep(10)
@@ -345,6 +347,7 @@ neutron_credentials = get_neutron_credentials()
 neutron = neutron_client.Client(**neutron_credentials)
 
 # Delete remaining churned networks, subnets and ports
+print "Deleting remaining churned networks, subnets and ports\n"
 f = os.popen("neutron port-list | grep 'existing\|new' | awk \'{print $2}\' 2> /dev/null")
 output = f.read()
 output = output.splitlines()
@@ -376,6 +379,7 @@ def parse_logfiles():
     min_delay = 0.0
     avg_delay = 0.0
     max_delay = 0.0
+    total_drop = 0
 
     f = os.popen("ls testns-DHCP-network*")
     output = f.read()
@@ -391,7 +395,7 @@ def parse_logfiles():
             print "\n  ERROR: {0} has errors.\n".format(logfile)
             continue
 
-        print "Number of packets drops  =  {0}".format(int(output[0]) + int(output[1]))
+        total_drop = total_drop + int(output[0]) + int(output[1])
 
         f = os.popen("grep -A 10 REQUEST-ACK " + logfile + " | grep min | awk \'{print $3}\' 2> /dev/null")
         output = f.read()
@@ -407,6 +411,8 @@ def parse_logfiles():
         output = f.read()
         output = output.splitlines()
         max_delay = max_delay + float(output[0])
+
+    print "Total number of packets dropped = {0}".format(total_drop)
 
     # Find average min_delay in all logfiles
     min_delay = min_delay / float(number_of_logfiles)
