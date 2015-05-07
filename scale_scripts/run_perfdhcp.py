@@ -399,25 +399,40 @@ def parse_logfiles():
         output = output.splitlines()
 
         if output == []:
-            print "\n  ERROR: {0} has errors.\n".format(logfile)
+            print "\n  ERROR: {0} has errors. Cannot find drops\n".format(logfile)
             continue
 
         total_drop = total_drop + int(output[0]) + int(output[1])
 
-        f = os.popen("grep -A 10 REQUEST-ACK " + logfile + " | grep min | awk \'{print $3}\' 2> /dev/null")
+        f = os.popen("grep min " + logfile + " | awk \'{print $3}\' 2> /dev/null")
         output = f.read()
         output = output.splitlines()
-        min_delay = min_delay + float(output[0])
 
-        f = os.popen("grep -A 10 REQUEST-ACK " + logfile + " | grep avg | awk \'{print $3}\' 2> /dev/null")
-        output = f.read()
-        output = output.splitlines()
-        avg_delay = avg_delay + float(output[0])
+        if output == []:
+            print "\n  ERROR: {0} has errors. Cannot find min_delay\n".format(logfile)
+            continue
 
-        f = os.popen("grep -A 10 REQUEST-ACK " + logfile + " | grep max | awk \'{print $3}\' 2> /dev/null")
+        min_delay = min_delay + float(output[0]) + float(output[1])
+
+        f = os.popen("grep avg " + logfile + " | awk \'{print $3}\' 2> /dev/null")
         output = f.read()
         output = output.splitlines()
-        max_delay = max_delay + float(output[0])
+
+        if output == []:
+            print "\n  ERROR: {0} has errors. Cannot find avg_delay\n".format(logfile)
+            continue
+
+        avg_delay = avg_delay + float(output[0]) + float(output[1])
+
+        f = os.popen("grep max " + logfile + " | awk \'{print $3}\' 2> /dev/null")
+        output = f.read()
+        output = output.splitlines()
+
+        if output == []:
+            print "\n  ERROR: {0} has errors. Cannot find max_delay\n".format(logfile)
+            continue
+
+        max_delay = max_delay + float(output[0]) + float(output[1])
 
     print "Total number of packets dropped = {0}".format(total_drop)
 
