@@ -1,5 +1,31 @@
 #! /usr/bin/python
 
+#####################################################################
+# Usage :
+# ./port_scale_wrapper.py -h
+# usage: port_scale_wrapper.py [-h] [-pc PC] [-nc NC] p
+# 
+# positional arguments:
+#   p           Number of DHCP ports. A negative value will delete networks,
+#               subnets and ports
+# 
+# optional arguments:
+#   -h, --help  show this help message and exit
+#   -pc PC      Number of DHCP ports to churn per minute. Default is 6
+#   -nc NC      Number of DHCP networks to churn per minute. Default is 6
+# 
+# Example to run port-scaling with 500 DHCP ports in one network with 5 DHCP ports churned every minute
+# and 6 DHCP networks churned every minute.
+#  
+# ./port_scale_wrapper.py 100 -pc 5
+#  
+# Example to run port-scaling with 1500 DHCP ports in one network with 10 DHCP ports churned every minute
+# and 8 DHCP networks churned every minute.
+#  
+# ./port_scale_wrapper.py 100 -pc 10 -nc 8
+# 
+#####################################################################
+
 import os
 import sys
 import time

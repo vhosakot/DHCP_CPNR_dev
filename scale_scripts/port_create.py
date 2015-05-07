@@ -1,5 +1,6 @@
 #! /usr/bin/python
 
+# Modified version of dh.py for port scaling in a single network DHCP-network-0
 # Usage   : ./port_create.py <Number of DHCP ports> [-delete]
 # Example : ./port_create.py 10
 # Example : ./port_create.py 200

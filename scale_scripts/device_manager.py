@@ -1,5 +1,8 @@
 #! /usr/bin/python
 
+# The functions 'get_device_id' and 'setup' in the DeviceManager class must be modified in
+# /usr/lib/python2.7/site-packages/neutron/agent/linux/dhcp.py before running this script
+
 # Usage   : ./device_manager.py [-delete]
 # Example : ./device_manager.py
 # Example : ./device_manager.py -delete
