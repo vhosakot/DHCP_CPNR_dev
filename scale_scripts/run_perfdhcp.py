@@ -18,7 +18,8 @@ def get_neutron_credentials():
     d['tenant_name'] = os.environ['OS_TENANT_NAME']
     return d
 
-os.system("rm -rf *.log")
+os.system("rm -rf testns*.log")
+os.system("rm -rf *memory*.log")
 
 # Clear neutron logs
 os.system("rm -rf /var/log/neutron/*.gz")
@@ -452,6 +453,7 @@ if not os.path.isdir("perfdhcp_logs"):
 f = os.popen("mv *.log perfdhcp_logs")
 output = f.read()
 output = output.splitlines()
-os.system("rm -rf *.log")
+os.system("rm -rf testns*.log")
+os.system("rm -rf *memory*.log")
 
 print ""
