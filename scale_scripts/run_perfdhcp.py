@@ -1,7 +1,8 @@
 #! /usr/bin/python
 
-# Usage is : ./run_perfdhcp.py <dhcp_ports_per_network_to_churn> <networks_to_churn>
-# Example  : ./run_perfdhcp.py 5 5
+# Usage is : ./run_perfdhcp.py [<Number of DHCP ports to churn per minute>] [<Number of DHCP networks to churn per minute>]
+# Example  : ./run_perfdhcp.py
+# Example  : ./run_perfdhcp.py 5 3
 
 import os
 import time
@@ -204,15 +205,18 @@ def t_create_network_subnet_port(n, new_ports_new_network):
             'network_id': network_id}}
         thread.start_new_thread(t_create_port, (json,))
 
-networks_to_churn = 3
-dhcp_ports_per_network_to_churn = 5
-delay_during_churn = 60
+networks_to_churn = 1
+dhcp_ports_per_network_to_churn = 1
+delay_during_port_churn = 10
+delay_during_network_churn = 10
 
-# Usage is : ./run_perfdhcp.py <dhcp_ports_per_network_to_churn> <networks_to_churn>
-# Example  : ./run_perfdhcp.py 5 5
+# Usage is : ./run_perfdhcp.py [<Number of DHCP ports to churn per minute>] [<Number of DHCP networks to churn per minute>]
+# Example  : ./run_perfdhcp.py
+# Example  : ./run_perfdhcp.py 5 3
+
 if len(sys.argv) == 3 and sys.argv[1].isdigit() and sys.argv[2].isdigit():
-    dhcp_ports_per_network_to_churn = int(sys.argv[1])
-    networks_to_churn = int(sys.argv[2])
+    delay_during_port_churn = 60 / int(sys.argv[1])
+    delay_during_network_churn = 60 / int(sys.argv[2])
 
 def churn_ports_in_existing_dhcp_networks():
     global script_ended
@@ -242,7 +246,7 @@ def churn_ports_in_existing_dhcp_networks():
                 n = n + 1
 
         # Sleep for few seconds after creating ports
-        time.sleep(delay_during_churn)
+        time.sleep(delay_during_port_churn)
 
         # Delete ports in each existing DHCP network
         f = os.popen("neutron port-list | grep port-in-existing-network- | awk \'{print $2}\' 2> /dev/null")
@@ -250,9 +254,6 @@ def churn_ports_in_existing_dhcp_networks():
         output = output.splitlines()
         for port_id in output:
             thread.start_new_thread(t_delete_port, (port_id,))
-
-        # Sleep after deleting ports
-        time.sleep(2)
 
 def churn_ports_in_new_dhcp_networks():
     global script_ended
@@ -267,7 +268,7 @@ def churn_ports_in_new_dhcp_networks():
             n = n + 1
 
         # Sleep for few seconds after creating networks, subnets and ports
-        time.sleep(delay_during_churn)
+        time.sleep(delay_during_network_churn)
 
         # Delete ports in each new DHCP network
         f = os.popen("neutron port-list | grep port-in-new-network- | awk \'{print $2}\' 2> /dev/null")
@@ -301,9 +302,6 @@ def churn_ports_in_new_dhcp_networks():
             except:
                 os.system("sudo ip netns delete " + ns + " &> /dev/null")
                 pass
-
-        # Sleep after deleting subnets and networks
-        time.sleep(2)
 
 # Start measuring CPU and memory usage in a separate thread before running perfdhcp
 thread.start_new_thread(measure_cpu_memory, ())
@@ -347,31 +345,39 @@ neutron_credentials = get_neutron_credentials()
 neutron = neutron_client.Client(**neutron_credentials)
 
 # Delete remaining churned networks, subnets and ports
+
 print "Deleting remaining churned networks, subnets and ports\n"
-f = os.popen("neutron port-list | grep 'existing\|new' | awk \'{print $2}\' 2> /dev/null")
+
+f = os.popen("timeout 60 neutron port-list | grep 'existing\|new' | awk \'{print $2}\' 2> /dev/null")
 output = f.read()
 output = output.splitlines()
 for i in output:
     try:
-        neutron.delete_port(i)
+        # neutron.delete_port(i)
+        os.system("neutron port-delete " + i + " &> /dev/null")
+        time.sleep(0.5)
     except:
         pass
 
-f = os.popen("neutron subnet-list | grep new | awk \'{print $2}\' 2> /dev/null")
+f = os.popen("timeout 60 neutron subnet-list | grep new | awk \'{print $2}\' 2> /dev/null")
 output = f.read()
 output = output.splitlines()
 for i in output:
     try:
-        neutron.delete_subnet(i)
+        # neutron.delete_subnet(i)
+        os.system("neutron subnet-delete " + i + " &> /dev/null")
+        time.sleep(0.5)
     except:
         pass
 
-f = os.popen("neutron net-list | grep new | awk \'{print $2}\' 2> /dev/null")
+f = os.popen("timeout 60 neutron net-list | grep new | awk \'{print $2}\' 2> /dev/null")
 output = f.read()
 output = output.splitlines()
 for i in output:
     try:
-        neutron.delete_network(i)
+        # neutron.delete_network(i)
+        os.system("neutron net-delete " + i + " &> /dev/null")
+        time.sleep(0.5)
     except:
         pass
 

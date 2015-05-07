@@ -1,5 +1,9 @@
 #! /usr/bin/python
 
+# Usage   : ./device_manager.py [-delete]
+# Example : ./device_manager.py
+# Example : ./device_manager.py -delete
+
 import os
 import sys
 import time
@@ -56,7 +60,7 @@ for network in networks:
     if "DHCP" in network['name']:
         testns_name = "testns-" + network['name']
         os.system("ip netns add " + testns_name)
-        time.sleep(1)
+        time.sleep(2)
         test_device = dhcp.DeviceManager(conf, root_helper, plugin)
         test_device.test = True
         pnetwork = plugin.get_network_info(network['id'])
@@ -77,6 +81,8 @@ for network in networks:
         os.system("sudo ip netns exec " + testns_name + " ifconfig " + test_tap_interface + " up")
         print "Added test tap interface {0} ({1}) in namespace {2}".format(test_tap_interface, gateway_ip, testns_name)
         
+        time.sleep(2)
+
         f = os.popen("sudo ip netns exec qdhcp-" + str(network['id']) + " ip a | grep inet | grep -v 'inet6\|127\|169'")
         output = f.read().splitlines()[0]
         ping_ip = output.split()[1].split('/')[0]

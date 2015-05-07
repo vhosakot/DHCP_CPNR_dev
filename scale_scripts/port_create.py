@@ -1,10 +1,9 @@
 #! /usr/bin/python
 
-# Usage   : ./dh.py <Number of DHCP networks> [<Number of DHCP ports per network>] [-delete]
-# Example : ./dh.py 1
-# Example : ./dh.py 10
-# Example : ./dh.py 10 20
-# Example : ./dh.py -delete
+# Usage   : ./port_create.py <Number of DHCP ports> [-delete]
+# Example : ./port_create.py 10
+# Example : ./port_create.py 200
+# Example : ./port_create.py -delete
 
 import os
 import sys
@@ -13,23 +12,15 @@ import time
 from datetime import datetime
 from neutronclient.v2_0 import client as neutron_client
 
-if len(sys.argv) < 2:
+if len(sys.argv) != 2:
     print "\n Wrong usage\n"
     sys.exit(0)
 
-network_count = 0
+dhcp_ports = 0
 
 if sys.argv[1].isdigit():
-    network_count = int(sys.argv[1])
+    dhcp_ports = int(sys.argv[1])
 elif sys.argv[1] != "-delete":
-    print "\n Wrong usage\n"
-    sys.exit(0)
-
-dhcp_ports_per_network = 1
-
-if len(sys.argv) == 3 and sys.argv[1].isdigit() and sys.argv[2].isdigit():
-    dhcp_ports_per_network = int(sys.argv[2])
-elif len(sys.argv) == 3:
     print "\n Wrong usage\n"
     sys.exit(0)
 
@@ -44,7 +35,9 @@ def get_neutron_credentials():
 neutron_credentials = get_neutron_credentials()
 neutron = neutron_client.Client(**neutron_credentials)
 
-# Check if DHCP networks already exist
+first_dhcp_network = []
+
+# Check if DHCP-network-0 already exists
 while True:
     try:
         first_dhcp_network = neutron.list_networks(name="DHCP-network-0")['networks']
@@ -52,11 +45,7 @@ while True:
     except:
         continue
 
-if len(sys.argv) >= 2 and sys.argv[1] != "-delete" and first_dhcp_network != []:
-    print "\n DHCP-network-0 already exists."
-    print " Run \'./dh.py -delete\'"
-    print " Exiting...\n"
-    sys.exit(0)
+network_id_for_dhcp_ports = ""
 
 def t_create_port(json):
     neutron_credentials = get_neutron_credentials()
@@ -150,38 +139,32 @@ tenant_id = neutron.get_quotas_tenant()['tenant']['tenant_id']
 json = {'quota': {'network': 100000, 'subnet': 100000, 'port': 100000}}
 neutron.update_quota(tenant_id, body=json)
 
-cidr_first_byte = 1
-cidr_second_byte = 0
 mac_base_part = "fa:16:"
-
-print "\nWaiting for DHCP networks, subnets and ports to be created...."
 
 def get_next_mac_remaining_part(i):
     m = "{:08X}".format(int("1", 16) + i)
     mac_remaining_part =':'.join(a+b for a,b in zip(m[::2], m[1::2]))
     return mac_remaining_part
 
-for i in range(0, network_count):
-
-    if cidr_first_byte == 127 or cidr_first_byte == 169 or cidr_first_byte == 172 or cidr_first_byte == 10:
-        continue
-
+if first_dhcp_network == []:
+    print "\nWaiting for DHCP network, subnet and ports to be created...."
+else:
+    print "\nDHCP-network-0 and DHCP-subnet-0 already exist. Waiting for DHCP ports to be created...."
+ 
+# Create a network and subnet if DHCP-network-0 does not exist
+if first_dhcp_network == []:
     # Create DHCP test network
-    network_name = "DHCP-network-" + str(i)
+    network_name = "DHCP-network-0"
     json = {'network': {'name': network_name, 'admin_state_up': True}}
     netw = neutron.create_network(body=json)
     net_dict = netw['network']
     network_id = net_dict['id']
+    network_id_for_dhcp_ports = network_id
 
     # Create DHCP test subnet
-    cidr = str(cidr_first_byte) + "." + str(cidr_second_byte) + ".0.0/16"
-    gateway_ip = str(cidr_first_byte) + "." + str(cidr_second_byte) + ".0.1"
-    cidr_second_byte = cidr_second_byte + 1
-    if cidr_second_byte == 255:
-        cidr_second_byte = 0
-        cidr_first_byte = cidr_first_byte + 1
-
-    subnet_name = "DHCP-subnet-" + str(i)
+    cidr = "1.0.0.0/16"
+    gateway_ip = "1.0.0.1"
+    subnet_name = "DHCP-subnet-0"
     json = {'subnets': [{'cidr': cidr,
                      'ip_version': 4,
                      'network_id': network_id,
@@ -189,19 +172,32 @@ for i in range(0, network_count):
                      'name': subnet_name}]}
     subnet = neutron.create_subnet(body=json)
 
-    mac_index = -1
+# Create DHCP test ports in DHCP-network-0
+mac_index = -1
+expected_dhcp_port_count = int(dhcp_ports)
 
-    # Create DHCP test ports
-    for j in range(0, dhcp_ports_per_network):
-        port_name = "DHCP-port-" + str(i) + "-" + str(j)
-        port_mac_address = mac_base_part + get_next_mac_remaining_part(mac_index)
-        mac_index = mac_index + 1
-        json = {'port': {
-            'admin_state_up': True,
-            'name': port_name,
-            'mac_address': port_mac_address,
-            'network_id': network_id}}
-        pool.apply_async(t_create_port, (json,))
+# Check if DHCP-network-0 already exists
+if first_dhcp_network !=[]:
+    network_id_for_dhcp_ports = first_dhcp_network[0]['id']
+
+    # Find number of existing DHCP ports in DHCP-network-0
+    f = os.popen("neutron port-list | grep DHCP | wc -l")
+    output = f.read()
+    existing_dhcp_port_count = output.splitlines()[0]
+
+    expected_dhcp_port_count = int(expected_dhcp_port_count) + int(existing_dhcp_port_count)
+    mac_index = int(existing_dhcp_port_count) - 1
+
+for j in range(0, dhcp_ports):
+    port_name = "DHCP-port-0" + "-" + str(j)
+    port_mac_address = mac_base_part + get_next_mac_remaining_part(mac_index)
+    mac_index = mac_index + 1
+    json = {'port': {
+        'admin_state_up': True,
+        'name': port_name,
+        'mac_address': port_mac_address,
+        'network_id': network_id_for_dhcp_ports}}
+    pool.apply_async(t_create_port, (json,))
 
 if "-delete" not in sys.argv:
     while True:
@@ -210,8 +206,8 @@ if "-delete" not in sys.argv:
             output = f.read()
             output = output.splitlines()
             if output[0] != "0":
-                print "{0} : {1} ports created".format(str(datetime.now()), output[0])
-            if output[0] == str(dhcp_ports_per_network * network_count):
+                print "{0} : {1} ports found. {2} ports expected".format(str(datetime.now()), output[0], expected_dhcp_port_count)
+            if output[0] == str(expected_dhcp_port_count):
                 # print "\nDone!\n"
                 break
             else:
