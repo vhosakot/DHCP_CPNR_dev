@@ -387,6 +387,8 @@ def parse_logfiles():
     avg_delay = 0.0
     max_delay = 0.0
     total_drop = 0
+    total_sent = 0
+    drop_percentage = 0.0
 
     f = os.popen("ls testns-DHCP-network*")
     output = f.read()
@@ -403,6 +405,18 @@ def parse_logfiles():
             continue
 
         total_drop = total_drop + int(output[0]) + int(output[1])
+
+        f = os.popen("grep sent " + logfile + " | awk \'{print $3}\' 2> /dev/null")
+        output = f.read()
+        output = output.splitlines()
+ 
+        if output == []:
+            print "\n  ERROR: {0} has errors. Cannot find number of sent packets\n".format(logfile)
+            continue
+
+        total_sent = total_sent + int(output[0]) + int(output[1])
+
+        drop_percentage = drop_percentage + ((100.00 * float(total_drop)) / float(total_sent))
 
         f = os.popen("grep min " + logfile + " | awk \'{print $3}\' 2> /dev/null")
         output = f.read()
@@ -434,8 +448,16 @@ def parse_logfiles():
 
         max_delay = max_delay + float(output[0]) + float(output[1])
 
+    # Total number of packets dropped in all logfiles
     print "Total number of packets dropped = {0}".format(total_drop)
 
+    # Total number of packets sent in all logfilesin all logfiles
+    print "Total number of packets sent    = {0}".format(total_sent)
+
+    # Find average drop_percentage in all logfiles
+    drop_percentage = drop_percentage / float(number_of_logfiles)
+    print "Packet drop % = {0} %".format(drop_percentage)
+ 
     # Find average min_delay in all logfiles
     min_delay = min_delay / float(number_of_logfiles)
     print "Minimum time to receive DHCP IP address = {0} milliseconds".format(min_delay)
