@@ -86,9 +86,14 @@ for network in networks:
         
         time.sleep(2)
 
-        f = os.popen("sudo ip netns exec qdhcp-" + str(network['id']) + " ip a | grep inet | grep -v 'inet6\|127\|169'")
-        output = f.read().splitlines()[0]
-        ping_ip = output.split()[1].split('/')[0]
+        try:
+            f = os.popen("sudo ip netns exec qdhcp-" + str(network['id']) + " ip a | grep inet | grep -v 'inet6\|127\|169'")
+            output = f.read().splitlines()[0]
+            ping_ip = output.split()[1].split('/')[0]
+        except Exception as e:
+            print "\n ERROR : Error when running command in namespace {0}".format("qdhcp-" + str(network['id']))
+            print e
+            continue
 
         f = os.popen("sudo ip netns exec " + testns_name + " ping -c 5 " + ping_ip)
         output = f.read()

@@ -216,8 +216,15 @@ delay_during_network_churn = 10
 # Example  : ./run_perfdhcp.py 5 3
 
 if len(sys.argv) == 3 and sys.argv[1].isdigit() and sys.argv[2].isdigit():
-    delay_during_port_churn = 60 / int(sys.argv[1])
-    delay_during_network_churn = 60 / int(sys.argv[2])
+    if int(sys.argv[1]) == 0:
+        dhcp_ports_per_network_to_churn = 0
+    else:
+        delay_during_port_churn = 60 / int(sys.argv[1])
+
+    if int(sys.argv[2]) == 0:
+        networks_to_churn = 0
+    else:
+        delay_during_network_churn = 60 / int(sys.argv[2])
 
 def churn_ports_in_existing_dhcp_networks():
     global script_ended
@@ -451,7 +458,7 @@ def parse_logfiles():
     # Total number of packets dropped in all logfiles
     print "Total number of packets dropped = {0}".format(total_drop)
 
-    # Total number of packets sent in all logfilesin all logfiles
+    # Total number of packets sent in all logfiles
     print "Total number of packets sent    = {0}".format(total_sent)
 
     # Find average drop_percentage in all logfiles
