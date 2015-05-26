@@ -128,8 +128,12 @@ try:
     cmd = "./port_create.py " + str(dhcp_ports_count)
     os.system(cmd)
 
-    print "\nWaiting 60 seconds....\n"
+    print "\nWaiting 60 seconds after creating {0} ports....\n".format(dhcp_ports_count)
     time.sleep(60)
+
+    os.system("systemctl restart neutron-dhcp-agent.service")
+    print "Waiting 120 seconds after restarting neutron-dhcp-agent.service....\n"
+    time.sleep(120)
 
     # Check if test namespace testns-DHCP-network-0 exists
     f = os.popen("ip netns list | grep testns-DHCP-network-0")
