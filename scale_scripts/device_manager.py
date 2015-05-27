@@ -10,6 +10,7 @@
 import os
 import sys
 import time
+from multiprocessing import Pool
 from neutron.agent.common import config
 from neutron.agent.linux import dhcp
 from neutron.agent import dhcp_agent
@@ -44,26 +45,23 @@ if len(sys.argv) == 2 and sys.argv[1] == "-delete":
         os.system(cmd)
     sys.exit(0)
 
-dhcp_agent.register_options()
-dhcp_agent.cfg.CONF(project='neutron')
-conf = dhcp_agent.cfg.CONF
-root_helper = config.get_root_helper(conf)
-ctx = context.get_admin_context_without_session()
-plugin = dhcp_agent.DhcpPluginApi(topics.PLUGIN, ctx, conf.use_namespaces)
-conf.interface_driver = "neutron.agent.linux.interface.OVSInterfaceDriver"
-
-while True:
+def t_create_testns(testns_name, network):
     try:
-        networks = neutron.list_networks()['networks']
-        break
-    except:
-        continue
+        neutron_credentials = get_neutron_credentials()
+        neutron = neutron_client.Client(**neutron_credentials)
+        dhcp_agent.register_options()
+        dhcp_agent.cfg.CONF(project='neutron')
+        conf = dhcp_agent.cfg.CONF
+        root_helper = config.get_root_helper(conf)
+        ctx = context.get_admin_context_without_session()
+        plugin = dhcp_agent.DhcpPluginApi(topics.PLUGIN, ctx, conf.use_namespaces)
+        conf.interface_driver = "neutron.agent.linux.interface.OVSInterfaceDriver"
 
-for network in networks:
-    if "DHCP" in network['name']:
-        testns_name = "testns-" + network['name']
-        os.system("ip netns add " + testns_name)
+        a = os.system("ip netns add " + testns_name)
+        if a != 0:
+            return
         time.sleep(2)
+
         test_device = dhcp.DeviceManager(conf, root_helper, plugin)
         test_device.test = True
         pnetwork = plugin.get_network_info(network['id'])
@@ -82,8 +80,8 @@ for network in networks:
         gateway_ip = subnet['gateway_ip']
         os.system("sudo ip netns exec " + testns_name + " ifconfig " + test_tap_interface + " " + gateway_ip + " netmask 255.255.255.0 up")
         os.system("sudo ip netns exec " + testns_name + " ifconfig " + test_tap_interface + " up")
-        print "Added test tap interface {0} ({1}) in namespace {2}".format(test_tap_interface, gateway_ip, testns_name)
-        
+        print "\nAdded test tap interface {0} ({1}) in namespace {2}".format(test_tap_interface, gateway_ip, testns_name)
+
         time.sleep(2)
 
         try:
@@ -93,18 +91,60 @@ for network in networks:
         except Exception as e:
             print "\n ERROR : Error when running command in namespace {0}".format("qdhcp-" + str(network['id']))
             print e
+            return
+
+        f = os.popen("sudo ip netns exec " + testns_name + " ping -c 5 " + ping_ip)
+        output = f.read()
+        ping_output = output.splitlines()
+        ping_output = ping_output[len(ping_output) - 2]
+        if " 0% packet loss" not in ping_output:
+            print "\n ERROR: Cannot ping {0} from test namespace {1}\n".format(ping_ip, testns_name)
+
+        f = os.popen("sudo ip netns exec " + testns_name + " ping -c 5 " + ping_ip)
+        output = f.read()
+        ping_output = output.splitlines()
+        ping_output = ping_output[len(ping_output) - 2]
+        if " 0% packet loss" not in ping_output:
+            print "\n ERROR: Cannot ping {0} from test namespace {1}\n".format(ping_ip, testns_name)
+    
+        f = os.popen("sudo ip netns exec " + testns_name + " ping -c 5 " + ping_ip)
+        output = f.read()
+        ping_output = output.splitlines()
+        ping_output = ping_output[len(ping_output) - 2]
+        if " 0% packet loss" not in ping_output:
+            print "\n ERROR: Cannot ping {0} from test namespace {1}\n".format(ping_ip, testns_name)
+    except Exception as e:
+        print "\n ERROR : An exception occurred when creating test namespace {0} for {1}".format(testns_name,  network['name'])
+        print e
+
+pool = Pool(processes=100)
+
+while True:
+    try:
+        networks = neutron.list_networks()['networks']
+        break
+    except:
+        continue
+
+testns_count = 0
+
+for network in networks:
+    if "DHCP" in network['name']:
+        testns_name = "testns-" + network['name']
+
+        # Check if namespace testns_name already exists
+        f = os.popen("ip netns | grep -w " + testns_name)
+        output = f.read()
+        output = output.splitlines()
+        if output != [] and output [0] == testns_name:
+            # print testns_name + " already found"
             continue
+        else:
+            pool.apply_async(t_create_testns, (testns_name, network))
+            testns_count = testns_count + 1
 
-        f = os.popen("sudo ip netns exec " + testns_name + " ping -c 5 " + ping_ip)
-        output = f.read()
-        ping_output = output.splitlines()
-        ping_output = ping_output[len(ping_output) - 2]
-        #if " 0% packet loss" not in ping_output:
-        #    print "\n ERROR: Cannot ping {0} from test namespace {1}\n".format(ping_ip, testns_name)
-
-        f = os.popen("sudo ip netns exec " + testns_name + " ping -c 5 " + ping_ip)
-        output = f.read()
-        ping_output = output.splitlines()
-        ping_output = ping_output[len(ping_output) - 2]
-        #if " 0% packet loss" not in ping_output:
-        #    print "\n ERROR: Cannot ping {0} from test namespace {1}\n".format(ping_ip, testns_name)
+if testns_count > 0:
+    print "\nWaiting for test namespaces to be created for perfDHCP...."
+    pool.close()
+    pool.join()
+    print "\n{0} test namespaces created for perfDHCP\n".format(testns_count)
