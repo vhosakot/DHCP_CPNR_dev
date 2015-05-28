@@ -494,9 +494,15 @@ for line in output:
 if not os.path.isdir("perfdhcp_logs"):
     os.mkdir("perfdhcp_logs")
 
-f = os.popen("mv *.log perfdhcp_logs")
-output = f.read()
-output = output.splitlines()
+# Save logs only for port-scaling and not for network-scaling as
+# there will be too many logs during network-scaling (one log file
+# is generated for each network)
+
+if dhcp_network_count == 1:
+    f = os.popen("mv *.log perfdhcp_logs")
+    output = f.read()
+    output = output.splitlines()
+
 os.system("rm -rf testns*.log")
 os.system("rm -rf *memory*.log")
 

@@ -196,7 +196,7 @@ if len(sys.argv) == 2 and sys.argv[1] == "-delete":
         if "DHCP" in network['name']:
             pool.apply_async(t_delete_ports_subnet_network, (network, ))
 
-    print "\nWaiting for DHCP networks to be deleted....\n"
+    # print "\nWaiting for DHCP networks to be deleted....\n"
 
     while True:
         try:
@@ -216,7 +216,7 @@ if len(sys.argv) == 2 and sys.argv[1] == "-delete":
 
     os.system("./device_manager.py -delete > /dev/null")
  
-    print "\nDone!\n"
+    # print "\nDone!\n"
 
     sys.exit(0)
 
@@ -251,7 +251,7 @@ if "-delete" not in sys.argv:
             if output[0] != "0":
                 print "{0} : {1} ports found. {2} ports expected".format(str(datetime.now()), output[0], expected_dhcp_port_count)
             if output[0] == str(expected_dhcp_port_count):
-                print "\nDone!\n"
+                # print "\nDone!\n"
                 break
             else:
                 time.sleep(5)

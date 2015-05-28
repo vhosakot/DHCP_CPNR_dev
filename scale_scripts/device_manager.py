@@ -97,22 +97,22 @@ def t_create_testns(testns_name, network):
         output = f.read()
         ping_output = output.splitlines()
         ping_output = ping_output[len(ping_output) - 2]
-        if " 0% packet loss" not in ping_output:
-            print "\n ERROR: Cannot ping {0} from test namespace {1}\n".format(ping_ip, testns_name)
+        # if " 0% packet loss" not in ping_output:
+            # print "\n ERROR: Cannot ping {0} from test namespace {1}\n".format(ping_ip, testns_name)
 
         f = os.popen("sudo ip netns exec " + testns_name + " ping -c 5 " + ping_ip)
         output = f.read()
         ping_output = output.splitlines()
         ping_output = ping_output[len(ping_output) - 2]
-        if " 0% packet loss" not in ping_output:
-            print "\n ERROR: Cannot ping {0} from test namespace {1}\n".format(ping_ip, testns_name)
+        # if " 0% packet loss" not in ping_output:
+            # print "\n ERROR: Cannot ping {0} from test namespace {1}\n".format(ping_ip, testns_name)
     
         f = os.popen("sudo ip netns exec " + testns_name + " ping -c 5 " + ping_ip)
         output = f.read()
         ping_output = output.splitlines()
         ping_output = ping_output[len(ping_output) - 2]
-        if " 0% packet loss" not in ping_output:
-            print "\n ERROR: Cannot ping {0} from test namespace {1}\n".format(ping_ip, testns_name)
+        # if " 0% packet loss" not in ping_output:
+            # print "\n ERROR: Cannot ping {0} from test namespace {1}\n".format(ping_ip, testns_name)
     except Exception as e:
         print "\n ERROR : An exception occurred when creating test namespace {0} for {1}".format(testns_name,  network['name'])
         print e
