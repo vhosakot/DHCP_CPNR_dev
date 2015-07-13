@@ -3,12 +3,14 @@
 import pprint 
 from neutron.plugins.cisco.cpnr import cpnr_client
 
+scheme = "http"
 ip = "10.23.194.242"
 port = 8080
 username = "cpnradmin"
 password = "cpnradmin"
+insecure = True
 
-c = cpnr_client.CpnrClient(ip, port, username, password)
+c = cpnr_client.CpnrClient(scheme, ip, port, username, password, insecure)
 
 print c.get_version()
 
@@ -35,7 +37,10 @@ while True:
           zoneid = zone['origin']
           for host in c.get_ccm_hosts(viewid=viewid, zoneid=zoneid):
               print 'Deleting CCMHost: ' + host['name']
-              c.delete_ccm_host(host['name'], viewid=viewid, zoneid=zoneid)
+              try: 
+		  c.delete_ccm_host(host['name'], viewid=viewid, zoneid=zoneid)
+              except Exception:
+                  continue
               object_deleted = True
           print 'Deleting CCMZone: ' + zoneid
           c.delete_ccm_zone(zoneid, viewid=viewid)

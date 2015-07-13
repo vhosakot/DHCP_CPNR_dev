@@ -7,8 +7,9 @@ ip = "10.23.194.242"
 port = 8080
 username = "cpnradmin"
 password = "cpnradmin"
+insecure = True
 
-c = cpnr_client.CpnrClient(ip, port, username, password)
+c = cpnr_client.CpnrClient(scheme, ip, port, username, password, insecure)
 
 print c.get_version()
 for vpn in c.get_vpns():
