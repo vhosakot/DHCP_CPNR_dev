@@ -4,7 +4,7 @@ import pprint
 from neutron.plugins.cisco.cpnr import cpnr_client
 
 scheme = "http"
-ip = "10.23.194.242"
+ip = "172.29.68.140"
 port = 8080
 username = "cpnradmin"
 password = "cpnradmin"
