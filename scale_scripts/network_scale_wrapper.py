@@ -74,22 +74,49 @@ def cleanup():
         os.system("> /var/log/neutron/openvswitch-agent.log")
         os.system("> /var/log/neutron/dnsmasq.log")
  
+        exclude_networks = []
+        exclude_subnets  = []
+        exclude_ports    = []
+        base_networks    = []
+
+        # Enter names of the networks that must not be deleted when cleanup
+        # is done by this script. The subnets and ports of the network
+        # names in the list existing_network_names below will also not be
+        # deleted when cleanup is done by this script.
+
+        existing_network_names = ["EXTERNAL", "pnr-network"]
+        
+        for existing_network in existing_network_names:
+            base_networks.append(neutron.list_networks(name=existing_network)['networks'])
+        
+        for base_nw in base_networks:
+            if base_nw != []:
+                exclude_networks.append(base_nw[0]['id'])
+                if base_nw[0]['subnets'] != []:
+                    exclude_subnets.append(base_nw[0]['subnets'][0])
+                ports_in_network = neutron.list_ports(network_id=base_nw[0]['id'])['ports']
+                if ports_in_network != []:
+                    for port in ports_in_network:
+                        exclude_ports.append(port['id'])
+        
         # Delete all ports
         ports = neutron.list_ports()['ports']
         for port in ports:
+            if port['id'] in exclude_ports:
+                continue
             neutron.delete_port(port['id'])
 
         # Delete all subnets
         subnets = neutron.list_subnets()['subnets']
         for subnet in subnets:
-            if "public-floating-606-subnet" in subnet['name']:
+            if subnet['id'] in exclude_subnets:
                 continue
             neutron.delete_subnet(subnet['id'])
 
         # Delete all networks and namespaces
         networks = neutron.list_networks()['networks']
         for network in networks:
-            if "public-floating-606" in network['name']:
+            if network['id'] in exclude_networks:
                 continue
             ns = "qdhcp-" + str(network['id'])
             neutron.delete_network(network['id'])
@@ -97,6 +124,14 @@ def cleanup():
 
         # Delete testns test namespace added by device_manager.py
         os.system("./device_manager.py -delete > /dev/null")
+
+        # Delete configs (scopes, VPNs, client entries, CCM zones, DNS views, etc) on CPNR
+        f = os.popen("grep dhcp_server_addr /etc/neutron/dhcp_agent.ini")
+        output = f.read()
+        cpnr_ip = output.splitlines()
+        if cpnr_ip != []:
+            cpnr_ip = cpnr_ip[0].split("=")[1]
+            os.system("./deleteall.py " + cpnr_ip)
 
     except Exception as e:
         print e
@@ -119,9 +154,12 @@ try:
 
         cleanup()
 
-        print "\nDone!\n"
+        print "\nCleanup done!\n"
 
         sys.exit(0)
+
+    # Delete networks, subnets and ports if any created in previous run
+    cleanup()
 
     # Increase Neutron quota for network, subnet and port
     tenant_id = neutron.get_quotas_tenant()['tenant']['tenant_id']

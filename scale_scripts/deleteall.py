@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import pprint 
+import sys
 from neutron.plugins.cisco.cpnr import cpnr_client
 
 scheme = "http"
@@ -10,9 +10,16 @@ username = "cpnradmin"
 password = "cpnradmin"
 insecure = True
 
+if len(sys.argv) == 2 and "." in sys.argv[1]:
+    ip = sys.argv[1]
+
 c = cpnr_client.CpnrClient(scheme, ip, port, username, password, insecure)
 
-print c.get_version()
+try:
+    print c.get_version()
+except Exception as e:
+    print "ERROR : Exception raised by deleteall.py : ", e
+    sys.exit(0)
 
 while True:
     object_deleted = False
@@ -53,5 +60,5 @@ while True:
        c.delete_dns_view(view['name'])
        object_deleted = True
     if object_deleted is False:
-        print "\n Done!\n" 
+        # print "\n Done!\n" 
         break

@@ -99,7 +99,7 @@ def t_create_network_subnet_ports(i, p):
     network_id = net_dict['id']
 
     # Create DHCP subnet
-    cidr = "1.0.0.0/16"
+    cidr = "1.0.0.0/24"
     gateway_ip = "1.0.0.1"
     subnet_name = "DHCP-subnet-" + str(i)
     json = {'subnets': [{'cidr': cidr,
