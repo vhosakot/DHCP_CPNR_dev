@@ -133,6 +133,12 @@ def cleanup():
             cpnr_ip = cpnr_ip[0].split("=")[1]
             os.system("./deleteall.py " + cpnr_ip)
 
+        # Clean DHCP stats on CPNR
+        cmd = "ssh centos@" + cpnr_ip + " \"/opt/nwreg2/local/usrbin/nrcmd -N cpnradmin -P cpnradmin \"dhcp resetStats\"\""
+        os.system(cmd)
+        time.sleep(3)
+        os.system(cmd)
+
     except Exception as e:
         print e
         print "\n ERROR: cleanup() failed\n"
