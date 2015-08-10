@@ -69,10 +69,12 @@ def cleanup():
         # Delete neutron logs
         os.system("rm -rf /var/log/neutron/*.gz")
         os.system("rm -rf /var/log/neutron/*metadata*.log")
-        os.system("> /var/log/neutron/dhcp-agent.log")
+        # os.system("> /var/log/neutron/dhcp-agent.log")
         os.system("> /var/log/neutron/server.log")
         os.system("> /var/log/neutron/openvswitch-agent.log")
         os.system("> /var/log/neutron/dnsmasq.log")
+        os.system("> /var/log/neutron/dhcp-relay.log")
+        os.system("> /var/log/neutron/dns-relay.log")
  
         exclude_networks = []
         exclude_subnets  = []
@@ -126,15 +128,15 @@ def cleanup():
         os.system("./device_manager.py -delete > /dev/null")
 
         # Delete configs (scopes, VPNs, client entries, CCM zones, DNS views, etc) on CPNR
-        f = os.popen("grep dhcp_server_addr /etc/neutron/dhcp_agent.ini")
-        output = f.read()
-        cpnr_ip = output.splitlines()
-        if cpnr_ip != []:
-            cpnr_ip = cpnr_ip[0].split("=")[1]
-            os.system("./deleteall.py " + cpnr_ip)
+        # f = os.popen("grep dhcp_server_addr /etc/neutron/dhcp_agent.ini")
+        # output = f.read()
+        # cpnr_ip = output.splitlines()
+        # if cpnr_ip != []:
+        #     cpnr_ip = cpnr_ip[0].split("=")[1]
+        #     os.system("./deleteall.py " + cpnr_ip)
 
         # Clean DHCP stats on CPNR
-        cmd = "ssh centos@" + cpnr_ip + " \"/opt/nwreg2/local/usrbin/nrcmd -N cpnradmin -P cpnradmin \"dhcp resetStats\"\""
+        cmd = "ssh cloud-user@" + cpnr_ip + " \"/opt/nwreg2/local/usrbin/nrcmd -N cpnradmin -P cpnradmin \"dhcp resetStats\"\""
         os.system(cmd)
         time.sleep(3)
         os.system(cmd)

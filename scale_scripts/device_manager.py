@@ -116,6 +116,8 @@ def t_create_testns(testns_name, network):
     except Exception as e:
         print "\n ERROR : An exception occurred when creating test namespace {0} for {1}".format(testns_name,  network['name'])
         print e
+        os.system("ip netns delete " + testns_name)
+        time.sleep(0.5)
 
 pool = Pool(processes=100)
 

@@ -181,10 +181,12 @@ if len(sys.argv) == 2 and sys.argv[1] == "-delete":
     # Delete neutron logs
     os.system("rm -rf /var/log/neutron/*.gz")
     os.system("rm -rf /var/log/neutron/*metadata*.log")
-    os.system("> /var/log/neutron/dhcp-agent.log")
+    # os.system("> /var/log/neutron/dhcp-agent.log")
     os.system("> /var/log/neutron/server.log")
     os.system("> /var/log/neutron/openvswitch-agent.log")
     os.system("> /var/log/neutron/dnsmasq.log")
+    os.system("> /var/log/neutron/dhcp-relay.log")
+    os.system("> /var/log/neutron/dns-relay.log")
  
     os.system("./device_manager.py -delete > /dev/null")
 
@@ -232,6 +234,8 @@ os.system("> /var/log/neutron/dhcp-agent.log")
 os.system("> /var/log/neutron/server.log")
 os.system("> /var/log/neutron/openvswitch-agent.log")
 os.system("> /var/log/neutron/dnsmasq.log")
+os.system("> /var/log/neutron/dhcp-relay.log")
+os.system("> /var/log/neutron/dns-relay.log")
 
 # Increase Neutron quota for network, subnet and port
 tenant_id = neutron.get_quotas_tenant()['tenant']['tenant_id']

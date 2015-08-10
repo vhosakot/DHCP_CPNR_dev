@@ -21,14 +21,6 @@ def get_neutron_credentials():
 os.system("rm -rf testns*.log")
 os.system("rm -rf *memory*.log")
 
-# Clear neutron logs
-os.system("rm -rf /var/log/neutron/*.gz")
-os.system("rm -rf /var/log/neutron/*metadata*.log")
-os.system("> /var/log/neutron/dhcp-agent.log")
-os.system("> /var/log/neutron/server.log")
-os.system("> /var/log/neutron/openvswitch-agent.log")
-os.system("> /var/log/neutron/dnsmasq.log")
-
 f = os.popen("neutron net-list | grep DHCP | wc -l 2> /dev/null")
 output = f.read()
 output = output.splitlines()
@@ -91,10 +83,13 @@ def measure_cpu_memory():
             if slept_secs == 20:
                 os.system("rm -rf /var/log/neutron/*.gz")
                 os.system("rm -rf /var/log/neutron/*metadata*.log")
-                os.system("> /var/log/neutron/dhcp-agent.log")
+                # os.system("> /var/log/neutron/dhcp-agent.log")
                 os.system("> /var/log/neutron/server.log")
                 os.system("> /var/log/neutron/openvswitch-agent.log")
                 os.system("> /var/log/neutron/dnsmasq.log")
+                os.system("> /var/log/neutron/dhcp-relay.log")
+                os.system("> /var/log/neutron/dns-relay.log")
+
                 slept_secs = 0
     
         avg_dhcp_agent_cpu = 0
