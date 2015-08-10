@@ -128,11 +128,11 @@ def cleanup():
         os.system("./device_manager.py -delete > /dev/null")
 
         # Delete configs (scopes, VPNs, client entries, CCM zones, DNS views, etc) on CPNR
-        # f = os.popen("grep dhcp_server_addr /etc/neutron/dhcp_agent.ini")
-        # output = f.read()
-        # cpnr_ip = output.splitlines()
-        # if cpnr_ip != []:
-        #     cpnr_ip = cpnr_ip[0].split("=")[1]
+        f = os.popen("grep dhcp_server_addr /etc/neutron/dhcp_agent.ini")
+        output = f.read()
+        cpnr_ip = output.splitlines()
+        if cpnr_ip != []:
+            cpnr_ip = cpnr_ip[0].split("=")[1]
         #     os.system("./deleteall.py " + cpnr_ip)
 
         # Clean DHCP stats on CPNR
