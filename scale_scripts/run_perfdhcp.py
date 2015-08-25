@@ -390,6 +390,7 @@ def parse_logfiles():
     max_delay = 0.0
     total_drop = 0
     total_sent = 0
+    total_received = 0
     drop_percentage = 0.0
 
     f = os.popen("ls testns-DHCP-network*")
@@ -402,21 +403,35 @@ def parse_logfiles():
         output = f.read()
         output = output.splitlines()
 
-        if output == []:
+        if len(output) == 0:
             print "\n  ERROR: {0} has errors. Cannot find drops\n".format(logfile)
             continue
-
-        total_drop = total_drop + int(output[0]) + int(output[1])
+  
+        for o in output:
+            total_drop = total_drop + int(o)
 
         f = os.popen("grep sent " + logfile + " | awk \'{print $3}\' 2> /dev/null")
         output = f.read()
         output = output.splitlines()
  
-        if output == []:
+        if len(output) == 0:
             print "\n  ERROR: {0} has errors. Cannot find number of sent packets\n".format(logfile)
             continue
 
-        total_sent = total_sent + int(output[0]) + int(output[1])
+        for o in output:
+            total_sent = total_sent + int(o)
+
+        f = os.popen("grep received " + logfile + " | awk \'{print $3}\' 2> /dev/null")
+        output = f.read()
+        output = output.splitlines()
+
+        if len(output) == 0:
+            print "\n  ERROR: {0} has errors. Cannot find number of received packets\n".format(logfile)
+            continue
+
+        for o in output:
+            if o.isdigit():
+                total_received = total_received + int(o)
 
         drop_percentage = drop_percentage + ((100.00 * float(total_drop)) / float(total_sent))
 
@@ -424,7 +439,7 @@ def parse_logfiles():
         output = f.read()
         output = output.splitlines()
 
-        if output == []:
+        if len(output) < 2:
             print "\n  ERROR: {0} has errors. Cannot find min_delay\n".format(logfile)
             continue
 
@@ -434,7 +449,7 @@ def parse_logfiles():
         output = f.read()
         output = output.splitlines()
 
-        if output == []:
+        if len(output) < 2:
             print "\n  ERROR: {0} has errors. Cannot find avg_delay\n".format(logfile)
             continue
 
@@ -444,17 +459,20 @@ def parse_logfiles():
         output = f.read()
         output = output.splitlines()
 
-        if output == []:
+        if len(output) < 2:
             print "\n  ERROR: {0} has errors. Cannot find max_delay\n".format(logfile)
             continue
 
         max_delay = max_delay + float(output[0]) + float(output[1])
 
-    # Total number of packets dropped in all logfiles
-    print "Total number of packets dropped = {0}".format(total_drop)
-
     # Total number of packets sent in all logfiles
-    print "Total number of packets sent    = {0}".format(total_sent)
+    print "Total number of packets sent     = {0}".format(total_sent)
+
+    # Total number of packets received in all logfiles
+    print "Total number of packets received = {0}".format(total_received)
+
+    # Total number of packets dropped in all logfiles
+    print "Total number of packets dropped  = {0}".format(total_drop)
 
     # Find average drop_percentage in all logfiles
     drop_percentage = drop_percentage / float(number_of_logfiles)
